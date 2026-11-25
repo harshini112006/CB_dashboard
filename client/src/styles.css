@@ -126,3 +126,45 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px
 .ai-box { background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; margin: 8px 0 10px; }
 .ai-box p { margin: 4px 0 0; white-space: pre-line; }
 @media (max-width: 640px) { .filters .frow { align-items: stretch; } }
+
+/* ---- multi-page: tabs, scorecards, heatmap, drawer */
+.tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+.tab { display: inline-flex; gap: 6px; align-items: center; padding: 8px 16px; border-radius: 10px; color: var(--muted); text-decoration: none; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+.tab:hover { color: var(--text); background: var(--hover); }
+.tab.on { background: var(--card); color: var(--accent); border-color: var(--border); box-shadow: var(--shadow); }
+.kpis.k4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-value.sm { font-size: 17px; line-height: 1.3; }
+.search { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 7px 12px; min-width: 240px; }
+.th-btn { all: unset; cursor: pointer; font-weight: 600; font-size: 12px; color: var(--muted); }
+.th-btn:hover, .th-btn:focus-visible { color: var(--text); }
+.pill { background: var(--hover); border-radius: 99px; padding: 2px 9px; font-size: 12px; }
+.bar-cell { width: 120px; } .bar { display: block; height: 8px; border-radius: 4px; background: var(--accent); min-width: 2px; }
+.inline { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 13px; }
+.inline select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; }
+table.clickable tbody tr { cursor: pointer; }
+
+.outlet-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.outlet { text-align: left; font: inherit; color: var(--text); cursor: pointer; display: flex; flex-direction: column; gap: 8px; }
+.outlet:hover { border-color: var(--accent); }
+.outlet.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.outlet-head { display: flex; gap: 8px; align-items: center; } .outlet-head .hint { margin-left: auto; }
+.rank { width: 22px; height: 22px; border-radius: 50%; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.outlet-rev { font-size: 26px; letter-spacing: -0.02em; }
+.outlet dl { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 10px; margin: 0; }
+.outlet dt { font-size: 11px; color: var(--muted); } .outlet dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.heat { display: flex; flex-direction: column; gap: 3px; overflow-x: auto; }
+.heat-row { display: grid; grid-template-columns: 110px repeat(var(--cols), minmax(22px, 1fr)); gap: 3px; align-items: center; }
+.heat-label { font-size: 12px; color: var(--muted); } .heat-h { font-size: 11px; color: var(--muted); text-align: center; }
+.heat-cell { height: 28px; border-radius: 5px; }
+
+.drawer-wrap { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 50; display: flex; justify-content: flex-end; }
+.drawer { width: min(440px, 100%); height: 100%; background: var(--card); padding: 18px; overflow-y: auto; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2); animation: slide 0.18s ease-out; }
+@keyframes slide { from { transform: translateX(30px); } }
+.drawer .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 0 0 14px; }
+.drawer .meta dt { font-size: 11px; color: var(--muted); } .drawer .meta dd { margin: 0; font-weight: 600; }
+.drawer tfoot td { border-top: 2px solid var(--border); border-bottom: 0; padding-top: 10px; }
+
+@media (max-width: 1000px) { .kpis.k4 { grid-template-columns: 1fr 1fr; } .outlet-cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .outlet-cards { grid-template-columns: 1fr; } .search { min-width: 0; width: 100%; } .tab { padding: 8px 12px; } }
+@media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }

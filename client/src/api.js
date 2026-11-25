@@ -30,6 +30,8 @@ export class HttpError extends Error {
 async function request(url, init) {
   const r = await fetch(url, init);
   if (!r.ok) {
+    // An expired session on any data call sends the user back to the login screen (handled in App).
+    if (r.status === 401 && !url.startsWith('/api/auth/')) window.dispatchEvent(new Event('cb-unauthorized'));
     const body = await r.json().catch(() => ({}));
     throw new HttpError(r.status, body.error || `Request failed (${r.status})`);
   }
@@ -44,6 +46,10 @@ export const logout = () => post('/api/auth/logout', {});
 export const fetchMeta = (signal) => request('/api/meta', { signal });
 export const fetchDashboard = (f, granularity, signal) => request(`/api/dashboard?${toQuery(f, { granularity })}`, { signal });
 export const fetchRecords = (f, page, signal) => request(`/api/records?${toQuery(f, { page, limit: 20 })}`, { signal });
+export const fetchMenu = (f, signal) => request(`/api/menu?${toQuery(f)}`, { signal });
+export const fetchOutlets = (f, signal) => request(`/api/outlets?${toQuery(f)}`, { signal });
+export const fetchOrders = (f, page, sort, signal) => request(`/api/orders?${toQuery(f, { page, sort, limit: 15 })}`, { signal });
+export const fetchOrder = (billNo, signal) => request(`/api/orders/${encodeURIComponent(billNo)}`, { signal });
 export const fetchAiSummary = (f, signal) =>
   post('/api/ai-summary', Object.fromEntries(Object.entries(f).map(([k, v]) => [k, Array.isArray(v) ? v.join('|') : v])), signal);
 export const exportUrl = (f) => `/api/export.csv?${toQuery(f)}`;
