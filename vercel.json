@@ -1,33 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "cb-dashboard": {
-      "root": ".",
-      "framework": "container",
-      "runtime": "container",
-      "buildCommand": "npm --prefix server install && npm run build"
-    },
-    "client": {
-      "root": "client",
-      "framework": "vite"
-    },
-    "server": {
-      "root": "server",
-      "framework": "express"
-    }
+  "installCommand": "npm --prefix server install && npm --prefix client install",
+  "buildCommand": "npm --prefix client run build",
+  "outputDirectory": "client/dist",
+  "functions": {
+    "api/index.mjs": { "maxDuration": 60 }
   },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "server"
-      }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "cb-dashboard"
-      }
-    }
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

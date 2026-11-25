@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
-import { lines } from './db.js';
+import { connect, lines } from './db.js';
 import { Cache } from './cache.js';
 import { parseFilters, cacheKey, autoGranularity } from './filters.js';
 import * as analytics from './analytics.js';
@@ -25,6 +25,9 @@ export function createApp({ staticDir = path.resolve(__dirname, '../../client/di
   app.use(cors({ origin: false })); // same-origin only; the SPA is served by this server
   app.use(compression());
   app.use(express.json({ limit: '2kb' }));
+  // Connect on first use. A long-running server has already connected at boot (no-op); a serverless function
+  // (Vercel) connects on its first request and reuses the connection while the instance stays warm.
+  app.use((_req, _res, next) => { connect().then(() => next(), next); });
 
   // ---- public routes
   app.get('/api/health', wrap(async (_req, res) => {
