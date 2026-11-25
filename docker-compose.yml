@@ -1,8 +1,42 @@
-# Optional: run a local MongoDB for development -> `docker compose up -d`
+# One-command full stack:
+#   docker compose up -d --build          -> MongoDB + app on http://localhost:4000
+#   docker compose run --rm seed          -> load data/data.xlsx into MongoDB (once)
+# Database only (for `npm run dev:*`):  docker compose up -d mongo
 services:
   mongo:
     image: mongo:7
     ports: ["27017:27017"]
     volumes: ["mongo-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports: ["4000:4000"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: cb_dashboard
+      # Optional: uncomment to require login / enable the LLM summary
+      # AUTH_USER: admin
+      # AUTH_PASSWORD: change-me
+      # ANTHROPIC_API_KEY: sk-ant-...
+    depends_on:
+      mongo: { condition: service_healthy }
+
+  seed:
+    build: .
+    profiles: ["seed"]
+    working_dir: /app/server
+    command: ["node", "scripts/seed.js"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: cb_dashboard
+    volumes: ["./data:/app/data:ro"]
+    depends_on:
+      mongo: { condition: service_healthy }
+
 volumes:
   mongo-data:
