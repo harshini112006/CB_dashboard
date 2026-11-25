@@ -10,14 +10,14 @@ export default function Heatmap({ rows, unit = 'orders' }) {
         <span className="heat-label" />
         {hours.map((h) => <span key={h} className="heat-h" role="columnheader">{hourLabel(h)}</span>)}
       </div>
-      {rows.map((r) => (
+      {rows.map((r, ri) => (
         <div className="heat-row" role="row" key={r.name}>
           <span className="heat-label" role="rowheader">{r.name}</span>
-          {hours.map((h) => {
+          {hours.map((h, hi) => {
             const v = r.values[h];
             return (
               <span key={h} role="cell" className="heat-cell" title={`${r.name} · ${String(h).padStart(2, '0')}:00 · ${v.toLocaleString('en-IN')} ${unit}`}
-                style={{ background: `color-mix(in srgb, var(--accent) ${Math.round((v / max) * 100)}%, var(--hover))` }} />
+                style={{ '--d': ri + hi, background: `color-mix(in srgb, var(--accent) ${Math.round((v / max) * 100)}%, var(--hover))` }} />
             );
           })}
         </div>

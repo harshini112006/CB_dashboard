@@ -5,6 +5,7 @@ import { exportUrl } from '../api.js';
 import { num, fmtDate } from '../format.js';
 import FilterBar from './FilterBar.jsx';
 import Icon from './Icons.jsx';
+import { TopProgress } from './Motion.jsx';
 
 const NAV = [
   ['/', 'Overview', 'overview', 'Sales performance at a glance'],
@@ -28,6 +29,7 @@ export default function Shell({ session, dark, toggleTheme, onSignOut, children 
 
   return (
     <div className="layout">
+      <TopProgress />
       {/* Desktop sidebar. Links carry the query string, so active filters follow you between pages. */}
       <aside className="sidebar">
         <div className="brand">
@@ -66,7 +68,7 @@ export default function Shell({ session, dark, toggleTheme, onSignOut, children 
 
         <FilterBar meta={meta} filters={filters} setFilters={setFilters} active={active} onReset={reset} />
 
-        {children}
+        <div key={pathname} className="route">{children}</div>
 
         <footer>Built for the California Burrito technical assessment · React · Express · MongoDB · Recharts</footer>
       </div>

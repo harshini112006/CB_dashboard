@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import Icon from './Icons.jsx';
+import { spot } from './Motion.jsx';
 import { num, money, moneyCompact, fmtDate } from '../format.js';
 
 // Animates a number towards its target (respects reduced-motion; always lands on the exact value).
@@ -37,7 +38,7 @@ function Spark({ data, color }) {
               <stop offset="0%" stopColor={color} stopOpacity={0.35} /><stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <Area type="monotone" dataKey="y" stroke={color} strokeWidth={1.8} fill={`url(#${id})`} dot={false} isAnimationActive={false} />
+          <Area type="monotone" dataKey="y" stroke={color} strokeWidth={1.8} fill={`url(#${id})`} dot={false} isAnimationActive animationDuration={1100} animationEasing="ease-out" />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -55,10 +56,10 @@ function Delta({ cur, prev, title }) {
   );
 }
 
-function Card({ c, previous }) {
+function Card({ c, previous, i }) {
   const shown = useCountUp(c.value);
   return (
-    <div className="card kpi">
+    <div className="card kpi spot" style={{ '--i': i }} {...spot}>
       <div className="kpi-top">
         <span className="kpi-ico" style={{ '--tone': c.color }}><Icon name={c.icon} size={17} /></span>
         <span className="kpi-label">{c.label}</span>
@@ -83,7 +84,7 @@ export default function Kpis({ data }) {
   ];
   return (
     <section className="kpis" aria-label="Key metrics">
-      {cards.map((c) => <Card key={c.label} c={c} previous={previous} />)}
+      {cards.map((c, i) => <Card key={c.label} c={c} previous={previous} i={i} />)}
       {previous && <p className="kpi-note">Change vs previous period ({fmtDate(previous.from)} – {fmtDate(previous.to)})</p>}
     </section>
   );

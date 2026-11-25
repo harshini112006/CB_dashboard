@@ -6,6 +6,7 @@ import { fetchMenu } from '../api.js';
 import { useApi } from '../hooks.js';
 import { useFilters } from '../filters-context.jsx';
 import { PageState } from '../components/PageState.jsx';
+import { Reveal, spot } from '../components/Motion.jsx';
 import { COLORS } from '../components/Charts.jsx';
 import { num, money, moneyCompact, compact } from '../format.js';
 
@@ -47,14 +48,14 @@ export default function Menu() {
       {data && (
         <>
           <section className="kpis k4">
-            <Stat label="Menu items sold" value={num(data.totals.items)} sub="distinct items" />
-            <Stat label="Units sold" value={num(data.totals.units)} sub={money(data.totals.revenue) + ' revenue'} />
-            <Stat label="Top item" value={top?.name} small sub={top ? `${money(top.revenue)} · ${(top.revenueShare * 100).toFixed(1)}% of revenue` : ''} />
-            <Stat label="Most ordered" value={[...data.items].sort((a, b) => b.orders - a.orders)[0]?.name} small
+            <Stat i={0} label="Menu items sold" value={num(data.totals.items)} sub="distinct items" />
+            <Stat i={1} label="Units sold" value={num(data.totals.units)} sub={money(data.totals.revenue) + ' revenue'} />
+            <Stat i={2} label="Top item" value={top?.name} small sub={top ? `${money(top.revenue)} · ${(top.revenueShare * 100).toFixed(1)}% of revenue` : ''} />
+            <Stat i={3} label="Most ordered" value={[...data.items].sort((a, b) => b.orders - a.orders)[0]?.name} small
               sub={`in ${num([...data.items].sort((a, b) => b.orders - a.orders)[0]?.orders)} orders`} />
           </section>
 
-          <section className="grid g2">
+          <Reveal><section className="grid g2">
             <div className="card chart">
               <div className="chart-head"><h2>Price vs volume</h2><span className="hint">each dot is a menu item</span></div>
               <ResponsiveContainer width="100%" height={320}>
@@ -65,7 +66,7 @@ export default function Menu() {
                   <ZAxis type="number" dataKey="revenue" range={[50, 400]} name="Revenue" />
                   <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ScatterTip />} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {byGroup.map(([g, pts], i) => <Scatter key={g} name={g} data={pts} fill={COLORS[i % COLORS.length]} fillOpacity={0.8} isAnimationActive={false} />)}
+                  {byGroup.map(([g, pts], i) => <Scatter key={g} name={g} data={pts} fill={COLORS[i % COLORS.length]} fillOpacity={0.8} isAnimationActive animationDuration={800} animationEasing="ease-out" />)}
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
@@ -78,13 +79,13 @@ export default function Menu() {
                   <XAxis type="number" tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compact} />
                   <YAxis type="category" dataKey="name" tick={{ ...AXIS, fontSize: 11 }} tickLine={false} axisLine={false} width={260} />
                   <Tooltip cursor={{ fill: 'var(--hover)' }} formatter={(v) => [num(v) + ' orders', 'Together']} />
-                  <Bar dataKey="orders" fill={COLORS[1]} radius={[0, 6, 6, 0]} isAnimationActive={false} />
+                  <Bar dataKey="orders" fill={COLORS[1]} radius={[0, 6, 6, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </section>
+          </section></Reveal>
 
-          <section className="card table-card">
+          <Reveal><section className="card table-card">
             <div className="chart-head">
               <h2>Item performance <small>{rows.length} of {data.items.length} items</small></h2>
               <input className="search" type="search" placeholder="Search item or category…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search items" />
@@ -104,8 +105,8 @@ export default function Menu() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((i) => (
-                    <tr key={i.name}>
+                  {rows.map((i, n) => (
+                    <tr key={i.name} style={{ '--r': Math.min(n, 14) }}>
                       <td><b>{i.name}</b></td><td><span className="pill">{i.group}</span></td>
                       <td className="r">{money(i.avgPrice)}</td><td className="r">{num(i.units)}</td>
                       <td className="r">{num(i.orders)}</td><td className="r">{money(i.revenue)}</td>
@@ -116,16 +117,16 @@ export default function Menu() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </section></Reveal>
         </>
       )}
     </PageState>
   );
 }
 
-function Stat({ label, value, sub, small }) {
+function Stat({ label, value, sub, small, i = 0 }) {
   return (
-    <div className="card kpi">
+    <div className="card kpi spot" style={{ '--i': i }} {...spot}>
       <span className="kpi-label">{label}</span>
       <strong className={`kpi-value ${small ? 'sm' : ''}`}>{value}</strong>
       <span className="kpi-sub">{sub}</span>

@@ -16,6 +16,7 @@ export default function Login({ onSuccess }) {
 
   return (
     <div className="login-wrap">
+      <span className="blob b1" aria-hidden /><span className="blob b2" aria-hidden />
       <form className="card login" onSubmit={submit}>
         <div className="logo" aria-hidden>🍔</div>
         <div>

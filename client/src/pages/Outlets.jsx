@@ -6,6 +6,7 @@ import { fetchOutlets } from '../api.js';
 import { useApi } from '../hooks.js';
 import { useFilters } from '../filters-context.jsx';
 import { PageState } from '../components/PageState.jsx';
+import { Reveal, spot } from '../components/Motion.jsx';
 import Heatmap from '../components/Heatmap.jsx';
 import { COLORS } from '../components/Charts.jsx';
 import { num, money, moneyCompact, compact, dateLabel } from '../format.js';
@@ -32,7 +33,7 @@ export default function Outlets() {
             {data.outlets.map((o, i) => {
               const on = filters.outlets.includes(o.name);
               return (
-                <button key={o.name} type="button" className={`card outlet ${on ? 'sel' : ''}`} aria-pressed={on} onClick={() => toggle('outlets', o.name)}
+                <button key={o.name} type="button" className={`card outlet spot ${on ? 'sel' : ''}`} style={{ '--i': i }} {...spot} aria-pressed={on} onClick={() => toggle('outlets', o.name)}
                   title="Click to filter the whole dashboard to this outlet">
                   <div className="outlet-head">
                     <span className="rank" style={{ background: colorOf(o.name) }}>{i + 1}</span>
@@ -53,7 +54,7 @@ export default function Outlets() {
             })}
           </section>
 
-          <section className="grid g2">
+          <Reveal><section className="grid g2">
             <div className="card chart">
               <div className="chart-head"><h2>Orders by type</h2><span className="hint">per outlet</span></div>
               <ResponsiveContainer width="100%" height={300}>
@@ -63,7 +64,7 @@ export default function Outlets() {
                   <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compact} width={48} />
                   <Tooltip cursor={{ fill: 'var(--hover)' }} formatter={(v, n) => [num(v), n]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {data.orderTypes.map((t, i) => <Bar key={t} dataKey={t} stackId="a" fill={COLORS[i]} isAnimationActive={false} />)}
+                  {data.orderTypes.map((t, i) => <Bar key={t} dataKey={t} stackId="a" fill={COLORS[i]} isAnimationActive animationDuration={800} animationEasing="ease-out" />)}
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -76,13 +77,13 @@ export default function Outlets() {
                   <YAxis type="category" dataKey="name" tick={AXIS} tickLine={false} axisLine={false} width={90} />
                   <Tooltip cursor={{ fill: 'var(--hover)' }} formatter={(v, n) => [v + '%', n]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {data.channels.map((c, i) => <Bar key={c} dataKey={c} stackId="a" fill={COLORS[i]} isAnimationActive={false} />)}
+                  {data.channels.map((c, i) => <Bar key={c} dataKey={c} stackId="a" fill={COLORS[i]} isAnimationActive animationDuration={800} animationEasing="ease-out" />)}
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </section>
+          </section></Reveal>
 
-          <div className="card chart">
+          <Reveal><div className="card chart">
             <div className="chart-head"><h2>Monthly revenue by outlet</h2><span className="hint">first and last months are partial</span></div>
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={data.monthly.map((m) => ({ ...m, label: dateLabel(m.month + '-01', 'month') }))} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
@@ -91,15 +92,15 @@ export default function Outlets() {
                 <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={moneyCompact} width={64} />
                 <Tooltip formatter={(v, n) => [money(v), n]} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                {data.outletNames.map((n) => <Line key={n} type="monotone" dataKey={n} stroke={colorOf(n)} strokeWidth={2} dot={false} isAnimationActive={false} />)}
+                {data.outletNames.map((n) => <Line key={n} type="monotone" dataKey={n} stroke={colorOf(n)} strokeWidth={2} dot={false} isAnimationActive animationDuration={800} animationEasing="ease-out" />)}
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </div></Reveal>
 
-          <div className="card chart">
+          <Reveal><div className="card chart">
             <div className="chart-head"><h2>When each outlet is busy</h2><span className="hint">orders by hour · darker = busier</span></div>
             <Heatmap rows={data.outlets.map((o) => ({ name: o.name, values: o.hours }))} />
-          </div>
+          </div></Reveal>
         </>
       )}
     </PageState>

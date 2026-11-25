@@ -47,8 +47,8 @@ export default function Orders() {
                 <tr><th>Bill</th><th>Date &amp; time</th><th>Outlet</th><th>Type</th><th>Payment</th><th className="r">Lines</th><th className="r">Items</th><th className="r">Total</th></tr>
               </thead>
               <tbody>
-                {data.rows.map((o) => (
-                  <tr key={o.billNo} onClick={() => setOpen(o.billNo)}>
+                {data.rows.map((o, n) => (
+                  <tr key={o.billNo} style={{ '--r': n }} onClick={() => setOpen(o.billNo)}>
                     <td><button className="link" onClick={(e) => { e.stopPropagation(); setOpen(o.billNo); }}>#{o.billNo}</button></td>
                     <td>{fmtTs(o.ts)}</td><td>{o.outlet}</td><td><TypePill type={o.orderType} /></td><td>{o.settlement}</td>
                     <td className="r">{o.lines}</td><td className="r">{o.units}</td><td className="r"><b>{money(o.revenue)}</b></td>

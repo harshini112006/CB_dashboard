@@ -29,7 +29,7 @@ export default function Insights({ items, filters, aiEnabled }) {
       </div>
       {ai.status === 'done' && <div className="ai-box" aria-live="polite"><b>AI summary</b><p>{ai.text}</p></div>}
       {ai.status === 'error' && <div className="error" role="alert">{ai.text}</div>}
-      <ul>{shown.map((t) => <li key={t}>{t}</li>)}</ul>
+      <ul>{shown.map((t, i) => <li key={t} style={{ '--i': i }}>{t}</li>)}</ul>
       {items.length > 4 && <button type="button" className="link" onClick={() => setAll(!all)}>{all ? 'Show fewer' : `Show ${items.length - 4} more`}</button>}
     </section>
   );

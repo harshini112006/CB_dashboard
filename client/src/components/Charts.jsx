@@ -82,7 +82,7 @@ export function TrendChart({ data, granularity, onGranularity }) {
           <Tooltip content={<Tip labelFmt={(l) => `${g === 'week' ? 'Week of ' : ''}${l}`} />} />
           <ReferenceLine y={avg} stroke="var(--muted)" strokeDasharray="4 4" strokeOpacity={0.6} />
           <Area type="monotone" dataKey={metric} stroke={COLORS[0]} strokeWidth={2.5} fill="url(#trendFill)"
-            dot={rows.length < 40} activeDot={{ r: 5 }} isAnimationActive={rows.length < 120} />
+            dot={rows.length < 40} activeDot={{ r: 5 }} isAnimationActive={rows.length < 120} animationDuration={1000} animationEasing="ease-out" />
         </AreaChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -100,7 +100,7 @@ export function BarBreakdown({ title, subtitle = 'Click a bar to filter', rows, 
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" tick={AXIS} tickLine={false} axisLine={false} width={96} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip />} />
-          <Bar dataKey="revenue" radius={[0, 6, 6, 0]} cursor="pointer" onClick={(d) => onPick(d.name)} isAnimationActive={false}>
+          <Bar dataKey="revenue" radius={[0, 6, 6, 0]} cursor="pointer" onClick={(d) => onPick(d.name)} isAnimationActive animationDuration={800} animationEasing="ease-out">
             {rows.map((r) => <Cell key={r.name} fill={color} fillOpacity={dim(selected, r.name)} />)}
             <LabelList dataKey="revenue" position="right" formatter={moneyCompact} style={{ fontSize: 12, fill: 'var(--text)', fontWeight: 600 }} />
           </Bar>
@@ -117,7 +117,7 @@ export function DonutBreakdown({ title, rows, selected, onPick }) {
       <ResponsiveContainer width="100%" height={190}>
         <PieChart>
           <Pie data={rows} dataKey="orders" nameKey="name" innerRadius={58} outerRadius={84} paddingAngle={2} cursor="pointer"
-            onClick={(d) => onPick(d.name)} isAnimationActive={false} stroke="var(--card)" strokeWidth={2}>
+            onClick={(d) => onPick(d.name)} isAnimationActive animationDuration={800} animationEasing="ease-out" stroke="var(--card)" strokeWidth={2}>
             {rows.map((r, i) => <Cell key={r.name} fill={COLORS[i % COLORS.length]} fillOpacity={dim(selected, r.name)} />)}
             <Label position="center" content={({ viewBox }) => (
               <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
@@ -154,7 +154,7 @@ export function TopItems({ byRevenue, byUnits }) {
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" tick={AXIS} tickLine={false} axisLine={false} width={160} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip />} />
-          <Bar dataKey={by} fill={COLORS[1]} radius={[0, 6, 6, 0]} isAnimationActive={false}>
+          <Bar dataKey={by} fill={COLORS[1]} radius={[0, 6, 6, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out">
             <LabelList dataKey={by} position="right" formatter={by === 'revenue' ? moneyCompact : compact} style={{ fontSize: 12, fill: 'var(--text)', fontWeight: 600 }} />
           </Bar>
         </BarChart>
@@ -177,7 +177,7 @@ export function HourChart({ rows }) {
           <XAxis dataKey="name" tick={AXIS} tickLine={false} axisLine={false} />
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compact} width={44} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip labelFmt={(l) => l} />} />
-          <Bar dataKey="orders" radius={[5, 5, 0, 0]} isAnimationActive={false}>
+          <Bar dataKey="orders" radius={[5, 5, 0, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out">
             {data.map((r) => <Cell key={r.hour} fill={r.hour === peak?.hour ? COLORS[0] : COLORS[3]} fillOpacity={r.hour === peak?.hour ? 1 : 0.8} />)}
           </Bar>
         </BarChart>
@@ -197,7 +197,7 @@ export function WeekdayChart({ rows }) {
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={moneyCompact} width={64} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip />} />
           <ReferenceLine y={avg} stroke="var(--muted)" strokeDasharray="4 4" strokeOpacity={0.7} />
-          <Bar dataKey="revenue" fill={COLORS[2]} radius={[5, 5, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="revenue" fill={COLORS[2]} radius={[5, 5, 0, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out" />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

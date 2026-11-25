@@ -40,7 +40,7 @@ export default function RecordsTable({ filters }) {
           </thead>
           <tbody>
             {(res?.rows ?? []).map((r, i) => (
-              <tr key={`${r.billNo}-${i}`}>
+              <tr key={`${r.billNo}-${i}`} style={{ '--r': Math.min(i, 14) }}>
                 <td>{r.billNo}</td><td>{fmtTs(r.ts)}</td><td>{r.outlet}</td><td>{r.item}</td><td>{r.group}</td>
                 <td><TypePill type={r.orderType} /></td><td>{r.settlement}</td>
                 <td className="r">{money(r.price)}</td><td className="r">{r.qty}</td><td className="r">{money(r.revenue)}</td>
