@@ -64,6 +64,40 @@ test('filters: outlet, hour range, weekday, bill, item', { skip }, async () => {
   assert.equal((await json('/api/dashboard?weekdays=3')).body.kpis.orders, 1); // 2025-07-01 is a Tuesday (dow 3)
 });
 
+test('menu: item stats use distinct orders; basket pairs counted', { skip }, async () => {
+  const { body } = await json('/api/menu');
+  const zinger = body.items.find((i) => i.name === 'Zinger');
+  assert.deepEqual([zinger.units, zinger.revenue, zinger.orders], [3, 600, 2]);
+  assert.deepEqual(body.pairs, [{ a: 'Coke', b: 'Zinger', orders: 1 }]);
+  assert.equal(body.totals.revenue, 650);
+});
+
+test('outlets: per-outlet KPIs, mix and hourly distribution', { skip }, async () => {
+  const { body } = await json('/api/outlets');
+  const mg = body.outlets.find((o) => o.name === 'MG Road');
+  assert.equal(mg.orders, 2);
+  assert.equal(mg.revenue, 200);
+  assert.equal(mg.deliveryShare, 1);
+  assert.equal(mg.aggregatorShare, 1);
+  assert.equal(mg.hours[20], 2);
+  assert.equal(body.outlets[0].name, 'HSR Layout'); // sorted by revenue desc (450 vs 200)
+  assert.equal(body.monthly[0].month, '2025-07');
+});
+
+test('orders: bill-level list with sorting, paging and detail', { skip }, async () => {
+  const list = (await json('/api/orders?sort=revenue&limit=2')).body;
+  assert.equal(list.total, 3);
+  assert.equal(list.pages, 2);
+  assert.deepEqual(list.rows.map((r) => r.billNo), [1, 2]);
+  assert.equal(list.rows[0].revenue, 450);
+  assert.equal((await json('/api/orders?sort=oldest&limit=1')).body.rows[0].billNo, 1);
+  const d = await json('/api/orders/1');
+  assert.equal(d.body.items.length, 2);
+  assert.equal(d.body.revenue, 450);
+  assert.equal((await json('/api/orders/99')).status, 404);
+  assert.equal((await json('/api/orders/abc')).status, 400);
+});
+
 test('second identical request is a cache hit', { skip }, async () => {
   await json('/api/dashboard?outlets=HSR%20Layout');
   const r = await json('/api/dashboard?outlets=HSR%20Layout');

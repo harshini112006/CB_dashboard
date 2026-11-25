@@ -8,6 +8,7 @@ import { lines } from './db.js';
 import { Cache } from './cache.js';
 import { parseFilters, cacheKey, autoGranularity } from './filters.js';
 import * as analytics from './analytics.js';
+import * as reports from './reports.js';
 import * as auth from './auth.js';
 import * as ai from './ai.js';
 
@@ -68,6 +69,32 @@ export function createApp({ staticDir = path.resolve(__dirname, '../../client/di
       .set('X-Cache', cached ? 'HIT' : 'MISS')
       .set('X-Response-Time', `${(performance.now() - t0).toFixed(0)}ms`)
       .json(value);
+  }));
+
+  // ---- page-level reports (all share the same filters + cache)
+  app.get('/api/menu', wrap(async (req, res) => {
+    const f = parseFilters(req.query);
+    res.json((await cache.wrap(cacheKey('menu', f), () => reports.menu(f))).value);
+  }));
+
+  app.get('/api/outlets', wrap(async (req, res) => {
+    const f = parseFilters(req.query);
+    res.json((await cache.wrap(cacheKey('outlets', f), () => reports.outlets(f))).value);
+  }));
+
+  app.get('/api/orders', wrap(async (req, res) => {
+    const f = parseFilters(req.query);
+    const page = Math.min(10000, Math.max(1, parseInt(req.query.page, 10) || 1));
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const sort = reports.SORT_KEYS.includes(req.query.sort) ? req.query.sort : 'newest';
+    res.json((await cache.wrap(cacheKey('orders', f, `${page}:${limit}:${sort}`), () => reports.orders(f, page, limit, sort))).value);
+  }));
+
+  app.get('/api/orders/:billNo', wrap(async (req, res) => {
+    if (!/^\d{1,12}$/.test(req.params.billNo)) return res.status(400).json({ error: 'Invalid bill number' });
+    const order = await reports.orderDetail(Number(req.params.billNo));
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
   }));
 
   app.get('/api/records', wrap(async (req, res) => {
