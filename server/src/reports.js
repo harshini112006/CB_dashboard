@@ -5,27 +5,41 @@ import { toMatch } from './filters.js';
 const OPTS = { allowDiskUse: true };
 const agg = (pipeline) => lines().aggregate(pipeline, OPTS).toArray();
 
-// Market basket: which two items most often share an order? Mongo only returns the distinct item set per
-// bill (a lean cursor); pairs are counted in Node, which is far cheaper than a double-$unwind self-join.
+// Market basket: which two items most often share an order? Pairs are generated and counted inside MongoDB
+// (only the top rows travel back), because shipping ~110k per-bill item lists to Node is slow over a remote
+// database connection (measured: ~10 s on Atlas free tier vs ~1 s in-database).
+const SEP = '';
 export async function topPairs(match, limit = 12) {
-  const counts = new Map();
-  const cursor = lines().aggregate([
+  const rows = await agg([
     { $match: match },
     { $group: { _id: '$billNo', items: { $addToSet: '$item' } } },
     { $match: { 'items.1': { $exists: true } } },
-    { $project: { _id: 0, items: 1 } },
-  ], OPTS);
-  for await (const { items } of cursor) {
-    items.sort();
-    for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
-        const k = `${items[i]}\u0000${items[j]}`;
-        counts.set(k, (counts.get(k) ?? 0) + 1);
-      }
-    }
-  }
-  return [...counts.entries()].sort((x, y) => y[1] - x[1]).slice(0, limit)
-    .map(([k, orders]) => { const [a, b] = k.split('\u0000'); return { a, b, orders }; });
+    { $project: { _id: 0, s: { $sortArray: { input: '$items', sortBy: 1 } } } },
+    {
+      $project: {
+        pairs: {
+          $reduce: {
+            input: { $range: [0, { $size: '$s' }] },
+            initialValue: [],
+            in: {
+              $concatArrays: ['$$value', {
+                $map: {
+                  input: { $range: [{ $add: ['$$this', 1] }, { $size: '$s' }] },
+                  as: 'j',
+                  in: { $concat: [{ $arrayElemAt: ['$s', '$$this'] }, SEP, { $arrayElemAt: ['$s', '$$j'] }] },
+                },
+              }],
+            },
+          },
+        },
+      },
+    },
+    { $unwind: '$pairs' },
+    { $group: { _id: '$pairs', orders: { $sum: 1 } } },
+    { $sort: { orders: -1, _id: 1 } },
+    { $limit: limit },
+  ]);
+  return rows.map(({ _id, orders }) => { const [a, b] = _id.split(SEP); return { a, b, orders }; });
 }
 
 // ---------------------------------------------------------------- Menu
@@ -117,22 +131,31 @@ const SORTS = {
 };
 export const SORT_KEYS = Object.keys(SORTS);
 
+// Max rows a sorted page may need to look past. $sort + $skip + $limit is executed as a top-k sort, so memory
+// stays bounded (a full sort of 110k bills exceeds the 32 MB in-memory limit on Atlas's free tier).
+export const MAX_ORDER_PAGE = 2000;
+
 export async function orders(f, page, limit, sort = 'newest') {
-  const [r] = await agg([
-    { $match: toMatch(f) },
-    {
-      $group: {
-        _id: '$billNo', ts: { $first: '$ts' }, outlet: { $first: '$outlet' }, orderType: { $first: '$orderType' },
-        settlement: { $first: '$settlement' }, revenue: { $sum: '$revenue' }, units: { $sum: '$qty' }, lines: { $sum: 1 },
-      },
-    },
-    { $sort: SORTS[sort] ?? SORTS.newest },
-    { $facet: { rows: [{ $skip: (page - 1) * limit }, { $limit: limit }], total: [{ $count: 'n' }] } },
+  page = Math.min(page, MAX_ORDER_PAGE);
+  const match = toMatch(f);
+  const perBill = {
+    _id: '$billNo', ts: { $first: '$ts' }, outlet: { $first: '$outlet' }, orderType: { $first: '$orderType' },
+    settlement: { $first: '$settlement' }, revenue: { $sum: '$revenue' }, units: { $sum: '$qty' }, lines: { $sum: 1 },
+  };
+  const [rows, total] = await Promise.all([
+    agg([
+      { $match: match },
+      { $group: perBill },
+      { $sort: SORTS[sort] ?? SORTS.newest },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ]),
+    agg([{ $match: match }, { $group: { _id: '$billNo' } }, { $count: 'n' }]),
   ]);
-  const total = r.total[0]?.n ?? 0;
+  const n = total[0]?.n ?? 0;
   return {
-    rows: r.rows.map(({ _id, ...o }) => ({ billNo: _id, ...o })),
-    total, page, limit, pages: Math.ceil(total / limit),
+    rows: rows.map(({ _id, ...o }) => ({ billNo: _id, ...o })),
+    total: n, page, limit, pages: Math.ceil(n / limit), maxPage: MAX_ORDER_PAGE,
   };
 }
 

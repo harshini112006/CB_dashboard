@@ -33,10 +33,13 @@ export default function Orders() {
               <div className="pager">
                 <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹ Prev</button>
                 <span>Page {num(page)} of {num(data.pages)}</span>
-                <button className="btn" disabled={page >= data.pages} onClick={() => setPage(page + 1)}>Next ›</button>
+                <button className="btn" disabled={page >= Math.min(data.pages, data.maxPage ?? data.pages)} onClick={() => setPage(page + 1)}>Next ›</button>
               </div>
             </div>
           </div>
+          {data.maxPage && data.pages > data.maxPage && (
+            <p className="hint">Browsing is limited to the first {num(data.maxPage)} pages per sort order — narrow the filters or change the sort to reach other orders.</p>
+          )}
           <div className="table-wrap">
             <table className="clickable">
               <thead>
