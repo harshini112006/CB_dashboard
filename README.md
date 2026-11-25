@@ -33,7 +33,10 @@ Every page shows loading skeletons, error and empty states ("No orders match the
 
 ### UI / UX details
 
-- **App shell** – dark sidebar navigation on desktop, bottom tab bar on phones, per-page headers and document titles, light/dark theme (follows the OS, manual toggle).
+- **App shell** – collapsible dark sidebar on desktop (remembers its state), bottom tab bar on phones, per-page headers and document titles, light/dark theme (follows the OS, manual toggle), back-to-top button.
+- **Command palette (Ctrl/⌘ + K)** – jump to any page, apply a date preset or outlet/category/type/payment filter, export, share or switch theme by typing; full keyboard navigation.
+- **Share & feedback** – "Share" copies a link to the exact view (filters live in the URL); toast notifications confirm copies, exports and cleared filters.
+- **Page highlights** – Overview opens with an animated hero ("₹X in revenue from Y orders", change vs previous period, top outlet, busiest hour, best seller, live trend line); Menu has a top-3 podium, a ranked "bought together" list and category tabs; Outlets cards carry monthly sparklines and share bars; Orders has a summary strip, quick bill search (a single match opens its receipt), numbered pagination and a receipt-style order drawer with copy-bill.
 - **Compact filter bar** – date-range popover with presets, one-click dropdowns, a "More filters" panel (weekday, time of day, bill, items) and **removable chips** for every active filter; sticky on wide screens.
 - **KPI cards** – animated numbers, sparklines, and **change vs the previous period** (an equal-length window just before the selected range; shown whenever a date range is chosen).
 - **Charts** – value labels, hover tooltips, click-to-filter, peak/average markers, donut totals with clickable legends.
