@@ -16,7 +16,18 @@ A web analytics dashboard built from a ~300,000-row Excel export of restaurant l
 - **Visualisations** – revenue/orders trend (area, with day/week/month granularity), revenue by outlet (bar), order-type and payment-channel split (donuts), revenue by category (bar), top-10 items (by revenue or units), orders by hour of day, revenue by weekday.
 - **Filters** – date range + quick presets, and multi-select for outlet, category, order type and payment channel. Bars/donuts are **clickable cross-filters**.
 - **Data explorer** – server-side paginated table of the underlying line items.
-- **Bonus** – CSV export of the filtered data (streamed), auto-generated insights, dark mode, responsive/mobile layout, response caching, unit tests, Render blueprint.
+
+### Bonus items (all implemented)
+
+| Bonus from the brief | What was built |
+|---|---|
+| **Advanced filtering** | Searchable **item** filter, **weekday** filter, **hour-of-day range**, **bill-number lookup**, click-to-filter charts, and **shareable URLs** (filters are stored in the query string, so any view can be bookmarked/sent). |
+| **Data export** | `GET /api/export.csv` streams the *currently filtered* rows (cursor → response, constant memory). Cells starting with `= + @ -` are neutralised against spreadsheet formula injection. |
+| **Authentication** | Optional login (enabled when `AUTH_PASSWORD` is set): HMAC-signed session in an `HttpOnly`, `SameSite=Lax` (and `Secure` over HTTPS) cookie, constant-time credential check, login rate limiting (10 failures / 15 min / IP). All data endpoints return 401 without a session. Zero extra dependencies. |
+| **AI-generated insights** | Two layers: (1) instant **rule-based insights** on every view (no API needed), and (2) an optional **“🤖 AI summary”** button that sends only the *aggregated* numbers for the current filters to an LLM (Anthropic API) and shows a short executive summary. Enabled by setting `ANTHROPIC_API_KEY`; cached per filter set and rate limited. |
+| **Responsive / mobile** | Fluid grid down to phone width, filters wrap, tables scroll inside their card, dark mode (follows OS, manual toggle). |
+| **Caching & performance** | Server-side LRU/TTL cache with in-flight de-duplication, pre-warmed default view, indexed aggregations, gzip, single round-trip per filter change, abortable/debounced requests, server-side pagination. |
+| **Infrastructure automation** | `Dockerfile` (multi-stage, non-root, healthcheck), `docker-compose.yml` (Mongo + app + seed job), `render.yaml` (infrastructure-as-code blueprint with auto-deploy), and **GitHub Actions** CI/CD: tests against a real MongoDB service, client build, Docker image build, and a deploy-hook job on `main`. |
 
 ## Run locally
 
@@ -44,7 +55,25 @@ npm run dev:client
 
 **Production-style run (one process):** `npm run build && npm start` → open http://localhost:4000 (Express serves the built React app).
 
-Tests: `npm test` (unit tests for filter parsing, query building, cache, insights).
+**Everything in Docker (no Node/Mongo install needed):**
+
+```bash
+docker compose up -d --build        # MongoDB + app  ->  http://localhost:4000
+docker compose run --rm seed        # one-off: load data/data.xlsx
+```
+
+**Tests:** `npm test` runs the unit tests (filters, cache, auth tokens, AI prompt). To also run the API integration tests against a real MongoDB:
+`TEST_MONGODB_URI=mongodb://127.0.0.1:27017 npm test` (uses a throw-away `cb_test` database; CI does this automatically).
+
+### Configuration (`server/.env`)
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MONGODB_URI` / `MONGODB_DB` | `mongodb://127.0.0.1:27017` / `cb_dashboard` | database |
+| `PORT` | `4000` | HTTP port |
+| `AUTH_USER` / `AUTH_PASSWORD` | `admin` / _unset_ | login is **required only if `AUTH_PASSWORD` is set** |
+| `AUTH_SECRET` | random per boot | signs session cookies (set it so sessions survive restarts) |
+| `ANTHROPIC_API_KEY` / `AI_MODEL` | _unset_ / `claude-haiku-5-5` | enables the AI summary button |
 
 ## Deployment
 
@@ -56,8 +85,11 @@ The app is a **single Node web service** (Express serves `/api/*` and the built 
    # server/.env  ->  MONGODB_URI=<atlas uri>
    npm run seed
    ```
-3. **Render** – New → Blueprint → select this repo (`render.yaml` is included). Set the `MONGODB_URI` environment variable to the Atlas URI. Build/start commands and the `/api/health` check are preconfigured.
+3. **Render** – New → Blueprint → select this repo (`render.yaml` is included). Set `MONGODB_URI` (the Atlas URI) and `AUTH_PASSWORD` (login password for reviewers; user is `reviewer`). Optionally set `ANTHROPIC_API_KEY` to enable the AI summary. Build/start commands, auto-deploy and the `/api/health` check are preconfigured.
 4. Paste the resulting URL into the table at the top of this README.
+5. _(Optional CD)_ Add the Render **Deploy Hook** URL as the GitHub repository secret `RENDER_DEPLOY_HOOK`; the workflow in `.github/workflows/ci.yml` then redeploys after every green push to `main`.
+
+> **Demo credentials:** `<fill in after deploying>` — username `reviewer`, password = the `AUTH_PASSWORD` you set.
 
 _(Any Node host works the same way: build command `npm --prefix server install && npm run build`, start command `npm start`, env var `MONGODB_URI`.)_
 
@@ -69,9 +101,13 @@ _(Any Node host works the same way: build command `npm --prefix server install &
 | `GET /api/dashboard` | all KPIs + chart data for the filters, in **one** response |
 | `GET /api/records?page=&limit=` | paginated line items |
 | `GET /api/export.csv` | streamed CSV of the filtered rows |
-| `GET /api/health` | liveness + cache stats |
+| `POST /api/ai-summary` | LLM executive summary for the filters (501 unless `ANTHROPIC_API_KEY` is set) |
+| `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` | session handling |
+| `GET /api/health` | liveness + cache stats (public) |
 
-Filter params (all optional): `from`, `to` (`YYYY-MM-DD`, inclusive), `outlets`, `groups`, `orderTypes`, `settlements` (values joined with `|`), `granularity` (`day|week|month`, default auto from range length).
+All endpoints except `health` and `auth/*` require a session when auth is enabled.
+
+Filter params (all optional): `from`, `to` (`YYYY-MM-DD`, inclusive), `outlets`, `groups`, `orderTypes`, `settlements`, `items` (values joined with `|`), `weekdays` (`1`=Sun … `7`=Sat, joined with `|`), `hourFrom`, `hourTo` (0–23), `bill` (exact bill number), `granularity` (`day|week|month`, default auto from range length).
 
 ## Architecture & decisions
 
@@ -113,9 +149,10 @@ On a free Atlas tier cold queries will be slower (shared CPU); the cache and boo
 - **Revenue = Price × Quantity** per the brief; there is no tax, discount or coupon field, so the figures are gross item sales. ~8.6k lines (all free dips, `Price = 0`) contribute units but no revenue.
 - **Category / outlet filters apply at line level.** With a category filter active, an "order" means "orders containing that category" and its revenue is the revenue of the matching lines.
 - **First and last months are partial** (data starts 17 Jun 2025 and ends 16 Jun 2026), so the monthly view shows lower end points; use the weekly view for like-for-like comparison.
-- **"AI insights" are rule-based**, computed from the aggregates (top outlet, peak hour, channel mix…). That keeps them free, instant and reproducible (no LLM key or latency); they update with the filters.
+- **Two kinds of insights, on purpose.** The always-on insights are rule-based (free, instant, reproducible, no key). The LLM summary is opt-in: it adds narrative and recommendations but costs latency/money and can phrase things loosely, so it only receives pre-aggregated numbers (never raw rows or user text), is told not to invent facts, and is cached + rate limited.
 - **Weekday insight is suppressed when weekdays are statistically flat** (within 10% of average) rather than crowning a "best day" out of noise.
-- **No authentication**: the data is a read-only sample and the brief lists auth as optional; the API only exposes aggregates and read-only queries, and filter values are always bound as `$in` lists (never raw operators), so there is no NoSQL-injection surface.
+- **Auth is deliberately lightweight**: one configured account with a signed cookie session rather than a user database / OAuth, which is proportionate for a single-tenant dashboard. Sessions are stateless (no server-side revocation; they expire after 12 h), and the login limiter is in-memory per instance. For multi-user use I'd move to an identity provider.
+- **Security of data access:** filter values are validated and always bound as literals (`$in`, `$gte`…), never raw operators, so there is no NoSQL-injection surface; CORS is same-origin only; CSV export is formula-injection safe.
 - The source Excel file is **not committed** (13 MB, `.gitignore`d); place it at `data/data.xlsx` to seed.
 
 ## Project structure
@@ -123,23 +160,28 @@ On a free Atlas tier cold queries will be slower (shared CPU); the cache and boo
 ```
 ├── client/                 React + Vite app
 │   └── src/
-│       ├── App.jsx         state, data fetching, layout
-│       ├── api.js          fetch helpers
+│       ├── App.jsx         session gate, URL-synced filters, data fetching, layout
+│       ├── api.js          fetch helpers, filter <-> URL (de)serialisation
 │       ├── format.js       INR / compact (L, Cr) formatting
-│       └── components/     Filters, Kpis, Insights, Charts, RecordsTable
+│       └── components/     Login, Filters, Kpis, Insights (+AI), Charts, RecordsTable
 ├── server/
 │   ├── src/
-│   │   ├── index.js        Express app + routes (+ serves client build)
-│   │   ├── analytics.js    aggregation pipelines + insights
+│   │   ├── index.js        process entry (connect, listen, warm cache)
+│   │   ├── app.js          Express app factory + routes (+ serves client build)
+│   │   ├── analytics.js    aggregation pipelines + rule-based insights
 │   │   ├── filters.js      query parsing / validation → Mongo $match
+│   │   ├── auth.js         cookie sessions, credential check, login limiter
+│   │   ├── ai.js           LLM summary prompt + API call
 │   │   ├── cache.js        LRU/TTL cache with request de-duplication
 │   │   └── db.js           Mongo connection
 │   ├── scripts/            seed.js (ETL) · dev-db.js (local mongod)
-│   └── test/               unit tests
-├── data/                   put data.xlsx here (git-ignored)
-├── docker-compose.yml      optional local MongoDB
-└── render.yaml             Render deployment blueprint
+│   └── test/               unit + API integration tests
+├── .github/workflows/      CI/CD (tests, build, docker, deploy hook)
+├── Dockerfile              multi-stage production image
+├── docker-compose.yml      Mongo + app + seed job
+├── render.yaml             Render deployment blueprint (IaC)
+└── data/                   put data.xlsx here (git-ignored)
 ```
 
 ## What I'd do next
-Pre-aggregated rollups for cold-start speed, Redis cache for multi-instance deployments, period-over-period KPI deltas, saved filter views via URL query params, and an authenticated multi-brand mode.
+Pre-aggregated rollups for cold-start speed, Redis cache for multi-instance deployments, period-over-period KPI deltas, and an identity-provider login with per-user roles and a multi-brand mode.
