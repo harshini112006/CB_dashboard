@@ -10,12 +10,26 @@ A web analytics dashboard built from a ~300,000-row Excel export of restaurant l
 
 ---
 
+## Pages
+
+A four-page single-page app (React Router). One **shared filter bar** sits above every page; the filters live in the URL, so they follow you between pages and any view is a shareable link.
+
+| Page | Route | What it answers |
+|---|---|---|
+| **Overview** | `/` | Headline KPIs, auto-insights (+ optional AI summary), revenue/orders trend (day/week/month), revenue by outlet and category, order-type and payment split, top-10 items, orders by hour, revenue by weekday, line-item explorer. |
+| **Menu** | `/menu` | Item performance: sortable/searchable table with price, units, distinct orders, revenue and share; *price vs volume* scatter by category; **frequently-bought-together** item pairs (market-basket analysis). |
+| **Outlets** | `/outlets` | Outlet scorecards (revenue, share, AOV, items/order, delivery %, aggregator %, peak hour) – click one to filter the whole app to it; order-type and payment-mix comparison; monthly revenue by outlet; **outlet × hour heatmap**. |
+| **Orders** | `/orders` | Bill-level order list (110k orders): sortable (newest / highest value / most items…), server-side paginated, and a **click-through order detail drawer** (receipt with every line item). |
+| _Login_ / _404_ | – | Optional sign-in screen (see Authentication); friendly not-found page. |
+
+Every page shows loading skeletons, error and empty states ("No orders match these filters").
+
 ## Features
 
 - **KPIs** – total revenue, distinct orders, average order value, units sold, line-item count (all recalculated for the active filters).
-- **Visualisations** – revenue/orders trend (area, with day/week/month granularity), revenue by outlet (bar), order-type and payment-channel split (donuts), revenue by category (bar), top-10 items (by revenue or units), orders by hour of day, revenue by weekday.
-- **Filters** – date range + quick presets, and multi-select for outlet, category, order type and payment channel. Bars/donuts are **clickable cross-filters**.
-- **Data explorer** – server-side paginated table of the underlying line items.
+- **Visualisations** – area/line trends, bars, donuts, scatter, stacked bars and a heatmap (Recharts + CSS grid).
+- **Filters** – date range + quick presets, multi-select for outlet, category, item, order type, payment and weekday, hour range and bill lookup. Bars/donuts/scorecards are **clickable cross-filters**.
+- **Data explorer** – server-side paginated tables of line items and of whole orders.
 
 ### Bonus items (all implemented)
 
@@ -99,6 +113,10 @@ _(Any Node host works the same way: build command `npm --prefix server install &
 |---|---|
 | `GET /api/meta` | filter options, date range, total records |
 | `GET /api/dashboard` | all KPIs + chart data for the filters, in **one** response |
+| `GET /api/menu` | item stats (units, distinct orders, revenue, share) + top item pairs |
+| `GET /api/outlets` | per-outlet KPIs, order-type / payment mix, monthly revenue, hourly distribution |
+| `GET /api/orders?page=&limit=&sort=` | bill-level orders (`sort`: `newest`, `oldest`, `revenue`, `lowest`, `units`) |
+| `GET /api/orders/:billNo` | one order with all its line items |
 | `GET /api/records?page=&limit=` | paginated line items |
 | `GET /api/export.csv` | streamed CSV of the filtered rows |
 | `POST /api/ai-summary` | LLM executive summary for the filters (501 unless `ANTHROPIC_API_KEY` is set) |
@@ -160,15 +178,19 @@ On a free Atlas tier cold queries will be slower (shared CPU); the cache and boo
 ```
 ├── client/                 React + Vite app
 │   └── src/
-│       ├── App.jsx         session gate, URL-synced filters, data fetching, layout
-│       ├── api.js          fetch helpers, filter <-> URL (de)serialisation
-│       ├── format.js       INR / compact (L, Cr) formatting
-│       └── components/     Login, Filters, Kpis, Insights (+AI), Charts, RecordsTable
+│       ├── App.jsx           session gate + routes
+│       ├── filters-context.jsx  shared filter state, mirrored to the URL
+│       ├── hooks.js          useApi: debounced, abortable data loading
+│       ├── api.js            fetch helpers, filter <-> URL (de)serialisation
+│       ├── format.js         INR / compact (L, Cr) formatting
+│       ├── pages/            Overview, Menu, Outlets, Orders (+ drawer), NotFound
+│       └── components/       Shell (nav), Login, Filters, Kpis, Insights (+AI), Charts, Heatmap, RecordsTable, PageState
 ├── server/
 │   ├── src/
 │   │   ├── index.js        process entry (connect, listen, warm cache)
 │   │   ├── app.js          Express app factory + routes (+ serves client build)
-│   │   ├── analytics.js    aggregation pipelines + rule-based insights
+│   │   ├── analytics.js    overview aggregation pipelines + rule-based insights
+│   │   ├── reports.js      menu / outlets / orders aggregations (+ basket analysis)
 │   │   ├── filters.js      query parsing / validation → Mongo $match
 │   │   ├── auth.js         cookie sessions, credential check, login limiter
 │   │   ├── ai.js           LLM summary prompt + API call
