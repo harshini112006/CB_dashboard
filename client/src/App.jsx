@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { fetchMeta, fetchDashboard, exportUrl } from './api.js';
+import {
+  fetchSession, fetchMeta, fetchDashboard, exportUrl, logout, filtersFromUrl, toQuery, EMPTY_FILTERS,
+} from './api.js';
 import Filters from './components/Filters.jsx';
 import Kpis from './components/Kpis.jsx';
 import Insights from './components/Insights.jsx';
+import Login from './components/Login.jsx';
 import { TrendChart, BarBreakdown, DonutBreakdown, TopItems, HourChart, WeekdayChart } from './components/Charts.jsx';
 import RecordsTable from './components/RecordsTable.jsx';
-
-const EMPTY = { from: '', to: '', outlets: [], groups: [], orderTypes: [], settlements: [] };
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
@@ -22,19 +23,51 @@ function useTheme() {
 }
 
 export default function App() {
+  const [session, setSession] = useState(null); // { authEnabled, user, features }
+  const [dark, toggleTheme] = useTheme();
+
+  useEffect(() => {
+    fetchSession().then(setSession).catch(() => setSession({ authEnabled: false, user: 'anonymous', features: {} }));
+  }, []);
+
+  if (!session) return <div className="app"><div className="skeleton-grid"><div className="sk" /></div></div>;
+  if (session.authEnabled && !session.user) {
+    return <Login onSuccess={(user) => setSession((s) => ({ ...s, user }))} />;
+  }
+  return (
+    <Dashboard
+      session={session} dark={dark} toggleTheme={toggleTheme}
+      onSignOut={async () => { await logout().catch(() => {}); setSession((s) => ({ ...s, user: null })); }}
+      onExpired={() => setSession((s) => ({ ...s, user: null }))}
+    />
+  );
+}
+
+function Dashboard({ session, dark, toggleTheme, onSignOut, onExpired }) {
   const [meta, setMeta] = useState(null);
-  const [filters, setFilters] = useState(EMPTY);
+  const [filters, setFilters] = useState(filtersFromUrl);
   const [granularity, setGranularity] = useState('');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [dark, toggleTheme] = useTheme();
+
+  const fail = useCallback((e) => {
+    if (e.name === 'AbortError') return;
+    if (e.status === 401) return onExpired();
+    setError(e.message); setLoading(false);
+  }, [onExpired]);
 
   useEffect(() => {
     const ac = new AbortController();
-    fetchMeta(ac.signal).then(setMeta).catch((e) => e.name !== 'AbortError' && setError(e.message));
+    fetchMeta(ac.signal).then(setMeta).catch(fail);
     return () => ac.abort();
-  }, []);
+  }, [fail]);
+
+  // Keep the URL in sync with the filters so any view can be shared / bookmarked.
+  useEffect(() => {
+    const q = toQuery(filters);
+    window.history.replaceState(null, '', q ? `?${q}` : window.location.pathname);
+  }, [filters]);
 
   // Refetch whenever filters change. Older in-flight requests are aborted so a slow response
   // can never overwrite a newer one, and the previous data stays on screen (dimmed) meanwhile.
@@ -44,19 +77,20 @@ export default function App() {
     const t = setTimeout(() => {
       fetchDashboard(filters, granularity, ac.signal)
         .then((d) => { setData(d); setError(''); setLoading(false); })
-        .catch((e) => { if (e.name !== 'AbortError') { setError(e.message); setLoading(false); } });
+        .catch(fail);
     }, 120);
     return () => { clearTimeout(t); ac.abort(); };
-  }, [filters, granularity]);
+  }, [filters, granularity, fail]);
 
   const toggle = useCallback((key, value) => setFilters((f) => ({
     ...f, [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value],
   })), []);
 
   const active = useMemo(
-    () => filters.from || filters.to || ['outlets', 'groups', 'orderTypes', 'settlements'].some((k) => filters[k].length),
+    () => JSON.stringify(filters) !== JSON.stringify(EMPTY_FILTERS),
     [filters],
   );
+  const reset = () => setFilters(EMPTY_FILTERS);
 
   return (
     <div className="app">
@@ -71,10 +105,11 @@ export default function App() {
         <div className="actions">
           <a className="btn" href={exportUrl(filters)} download>⬇ Export CSV</a>
           <button className="btn icon" onClick={toggleTheme} aria-label="Toggle dark mode" title="Toggle dark mode">{dark ? '☀' : '☾'}</button>
+          {session.authEnabled && <button className="btn" onClick={onSignOut} title={`Signed in as ${session.user}`}>Sign out</button>}
         </div>
       </header>
 
-      <Filters meta={meta} filters={filters} setFilters={setFilters} active={active} onReset={() => setFilters(EMPTY)} />
+      <Filters meta={meta} filters={filters} setFilters={setFilters} active={active} onReset={reset} />
 
       {error && <div className="error" role="alert">Couldn’t load data: {error}</div>}
 
@@ -82,11 +117,11 @@ export default function App() {
         {!data ? (
           <div className="skeleton-grid"><div className="sk" /><div className="sk" /><div className="sk" /></div>
         ) : data.kpis.orders === 0 ? (
-          <div className="empty card">No orders match these filters. <button className="link" onClick={() => setFilters(EMPTY)}>Clear filters</button></div>
+          <div className="empty card">No orders match these filters. <button className="link" onClick={reset}>Clear filters</button></div>
         ) : (
           <>
             <Kpis k={data.kpis} />
-            <Insights items={data.insights} />
+            <Insights items={data.insights} filters={filters} aiEnabled={session.features?.ai} />
             <TrendChart data={data} granularity={granularity} onGranularity={setGranularity} />
             <section className="grid g3">
               <BarBreakdown title="Revenue by outlet" rows={data.outlets} selected={filters.outlets} onPick={(v) => toggle('outlets', v)} />
