@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchRecords } from '../api.js';
 import { num, money } from '../format.js';
+import { TypePill } from './Pills.jsx';
 
 const fmtTs = (iso) => iso.replace('T', ' ').slice(0, 16);
 
@@ -41,7 +42,7 @@ export default function RecordsTable({ filters }) {
             {(res?.rows ?? []).map((r, i) => (
               <tr key={`${r.billNo}-${i}`}>
                 <td>{r.billNo}</td><td>{fmtTs(r.ts)}</td><td>{r.outlet}</td><td>{r.item}</td><td>{r.group}</td>
-                <td>{r.orderType}</td><td>{r.settlement}</td>
+                <td><TypePill type={r.orderType} /></td><td>{r.settlement}</td>
                 <td className="r">{money(r.price)}</td><td className="r">{r.qty}</td><td className="r">{money(r.revenue)}</td>
               </tr>
             ))}

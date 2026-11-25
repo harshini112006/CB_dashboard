@@ -18,8 +18,10 @@ export default function Login({ onSuccess }) {
     <div className="login-wrap">
       <form className="card login" onSubmit={submit}>
         <div className="logo" aria-hidden>🍔</div>
-        <h1>Burger Town Analytics</h1>
-        <p className="hint">Sign in to view the dashboard</p>
+        <div>
+          <h1>Burger Town Analytics</h1>
+          <p className="sub">Sign in to view the dashboard</p>
+        </div>
         <label>Username
           <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoFocus required />
         </label>

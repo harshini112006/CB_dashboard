@@ -25,7 +25,7 @@ export default function Outlets() {
   const colorOf = (name) => COLORS[data.outletNames.indexOf(name) % COLORS.length];
 
   return (
-    <PageState data={data} loading={loading} error={error} empty={data?.outlets.length === 0} onReset={reset}>
+    <PageState kind="cards" data={data} loading={loading} error={error} empty={data?.outlets.length === 0} onReset={reset}>
       {data && (
         <>
           <section className="outlet-cards" aria-label="Outlet scorecards">

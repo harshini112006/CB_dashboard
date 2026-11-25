@@ -5,6 +5,7 @@ import { useApi } from '../hooks.js';
 import { useFilters } from '../filters-context.jsx';
 import { PageState } from '../components/PageState.jsx';
 import { num, money } from '../format.js';
+import { TypePill } from '../components/Pills.jsx';
 
 const SORTS = [['newest', 'Newest first'], ['oldest', 'Oldest first'], ['revenue', 'Highest value'], ['lowest', 'Lowest value'], ['units', 'Most items']];
 const fmtTs = (iso) => iso.replace('T', ' ').slice(0, 16);
@@ -19,7 +20,7 @@ export default function Orders() {
   const { data, loading, error } = useApi((s) => fetchOrders(filters, page, sort, s), [filters, page, sort]);
 
   return (
-    <PageState data={data} loading={loading} error={error} empty={data?.total === 0} onReset={reset}>
+    <PageState kind="table" data={data} loading={loading} error={error} empty={data?.total === 0} onReset={reset}>
       {data && (
         <section className="card table-card">
           <div className="chart-head">
@@ -49,7 +50,7 @@ export default function Orders() {
                 {data.rows.map((o) => (
                   <tr key={o.billNo} onClick={() => setOpen(o.billNo)}>
                     <td><button className="link" onClick={(e) => { e.stopPropagation(); setOpen(o.billNo); }}>#{o.billNo}</button></td>
-                    <td>{fmtTs(o.ts)}</td><td>{o.outlet}</td><td>{o.orderType}</td><td>{o.settlement}</td>
+                    <td>{fmtTs(o.ts)}</td><td>{o.outlet}</td><td><TypePill type={o.orderType} /></td><td>{o.settlement}</td>
                     <td className="r">{o.lines}</td><td className="r">{o.units}</td><td className="r"><b>{money(o.revenue)}</b></td>
                   </tr>
                 ))}
@@ -95,7 +96,7 @@ function OrderDrawer({ billNo, onClose }) {
             <dl className="meta">
               <div><dt>Outlet</dt><dd>{order.outlet}</dd></div>
               <div><dt>Placed</dt><dd>{fmtTs(order.ts)}</dd></div>
-              <div><dt>Type</dt><dd>{order.orderType}</dd></div>
+              <div><dt>Type</dt><dd><TypePill type={order.orderType} /></dd></div>
               <div><dt>Payment</dt><dd>{order.settlement}</dd></div>
             </dl>
             <table>

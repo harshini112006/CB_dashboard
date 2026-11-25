@@ -14,10 +14,10 @@ export default function Overview({ session }) {
   const { data, loading, error } = useApi((s) => fetchDashboard(filters, granularity, s), [filters, granularity]);
 
   return (
-    <PageState data={data} loading={loading} error={error} empty={data?.kpis.orders === 0} onReset={reset}>
+    <PageState kind="dashboard" data={data} loading={loading} error={error} empty={data?.kpis.orders === 0} onReset={reset}>
       {data && (
         <>
-          <Kpis k={data.kpis} />
+          <Kpis data={data} />
           <Insights items={data.insights} filters={filters} aiEnabled={session.features?.ai} />
           <TrendChart data={data} granularity={granularity} onGranularity={setGranularity} />
           <section className="grid g3">

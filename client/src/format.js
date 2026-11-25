@@ -16,6 +16,13 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export function dateLabel(iso, gran) {
   const [y, m, d] = iso.split('-').map(Number);
   if (gran === 'month') return `${MONTHS[m - 1]} ${String(y).slice(2)}`;
-  return `${d} ${MONTHS[m - 1]}${gran === 'week' ? '' : ''}`;
+  return `${d} ${MONTHS[m - 1]}`;
+}
+// "2025-06-17" -> "17 Jun 2025"
+export function fmtDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`;
 }
 export const hourLabel = (h) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}`;
+export const hourLong = (h) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' : 'PM'}`;

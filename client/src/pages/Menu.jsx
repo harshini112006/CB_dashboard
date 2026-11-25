@@ -43,7 +43,7 @@ export default function Menu() {
   const pairRows = (data?.pairs ?? []).map((p) => ({ name: `${p.a} + ${p.b}`, orders: p.orders })).reverse();
 
   return (
-    <PageState data={data} loading={loading} error={error} empty={data?.items.length === 0} onReset={reset}>
+    <PageState kind="dashboard" data={data} loading={loading} error={error} empty={data?.items.length === 0} onReset={reset}>
       {data && (
         <>
           <section className="kpis k4">

@@ -20,6 +20,7 @@ export function filtersFromUrl(search = window.location.search) {
   const f = { ...EMPTY_FILTERS };
   for (const k of SCALARS) f[k] = p.get(k) ?? '';
   for (const k of ARRAYS) f[k] = p.get(k) ? p.get(k).split('|').filter(Boolean) : [];
+  f.weekdays = f.weekdays.map(Number).filter((n) => n >= 1 && n <= 7); // weekdays are numeric (1 = Sunday)
   return f;
 }
 
