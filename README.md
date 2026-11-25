@@ -106,7 +106,14 @@ docker compose run --rm seed        # one-off: load data/data.xlsx
 
 ## Deployment
 
-The app is a **single Node web service** (Express serves `/api/*` and the built React app) plus a **MongoDB Atlas** free (M0) cluster.
+Two supported ways to host it (both use the same **MongoDB Atlas** free M0 cluster):
+
+- **Vercel (serverless)** – the React app is served as static files and the Express API runs as one serverless function (`api/index.mjs`), configured by `vercel.json`. Import the repo in Vercel and set the environment variables below; no other settings needed. The API connects to MongoDB on its first request and reuses the connection while the instance is warm, and `maxDuration` is raised to 60 s so large CSV exports can finish.
+- **Render / Docker (long-running server)** – Express serves `/api/*` and the built React app from one process (see steps 3–5).
+
+> _Note:_ an earlier `vercel.json` used Vercel's beta **Container Runtime** (building the `Dockerfile`); that build failed at Vercel's "pushing image" step, so the config now uses Vercel's standard static + serverless-function setup. The `Dockerfile` is still used by `docker compose` and by container hosts.
+
+Environment variables (Vercel: *Project → Settings → Environment Variables*): `MONGODB_URI`, `MONGODB_DB=cb_dashboard`, `AUTH_USER`, `AUTH_PASSWORD`, `AUTH_SECRET` (any long random string), and optionally `ANTHROPIC_API_KEY`.
 
 1. **Atlas** – create a free M0 cluster, add a database user, allow network access (`0.0.0.0/0` for the demo), copy the `mongodb+srv://…` URI.
 2. **Load the data once from your machine** (the Excel file is not stored in git):
