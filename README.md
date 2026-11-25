@@ -97,8 +97,9 @@ The app is a **single Node web service** (Express serves `/api/*` and the built 
 2. **Load the data once from your machine** (the Excel file is not stored in git):
    ```bash
    # server/.env  ->  MONGODB_URI=<atlas uri>
-   npm run seed
+   npm run seed          # 300k rows; takes a few minutes over a home connection (the upload dominates)
    ```
+   If the seed fails with `querySrv ECONNREFUSED`, your network's DNS refuses SRV lookups – add `DNS_SERVERS=8.8.8.8,1.1.1.1` to `server/.env`.
 3. **Render** – New → Blueprint → select this repo (`render.yaml` is included). Set `MONGODB_URI` (the Atlas URI) and `AUTH_PASSWORD` (login password for reviewers; user is `reviewer`). Optionally set `ANTHROPIC_API_KEY` to enable the AI summary. Build/start commands, auto-deploy and the `/api/health` check are preconfigured.
 4. Paste the resulting URL into the table at the top of this README.
 5. _(Optional CD)_ Add the Render **Deploy Hook** URL as the GitHub repository secret `RENDER_DEPLOY_HOOK`; the workflow in `.github/workflows/ci.yml` then redeploys after every green push to `main`.
@@ -157,7 +158,10 @@ Filter params (all optional): `from`, `to` (`YYYY-MM-DD`, inclusive), `outlets`,
 | Paginated records (page 500 / filtered) | 0.1 – 0.3 s |
 | Seeding 300k rows from Excel | ~10 s |
 
-On a free Atlas tier cold queries will be slower (shared CPU); the cache and boot-time warm-up keep typical interaction fast, and a re-visited filter combination is instant.
+**Verified on MongoDB Atlas M0 (free tier)** with all 300k rows: every endpoint works; cold queries take ~0.2 s (filtered dashboard), ~1 – 1.6 s (outlets, menu, orders) and the cache makes repeats instant. Two free-tier constraints shaped the queries:
+
+- **M0 ignores `allowDiskUse` and caps in-memory sorts at 32 MB**, so a full sort of 110k orders fails there. The Orders page therefore uses `$sort + $skip + $limit` (a bounded top-k sort) and limits browsing to the first 2,000 pages per sort order; narrow the filters or change the sort to reach the rest.
+- **Moving data out of the database is the slow part on a remote cluster.** Item-pair ("bought together") counting originally streamed 110k per-order item lists to Node (~9.6 s on Atlas); it now generates and counts pairs inside MongoDB and returns only 12 rows (~1.7 s, identical results).
 
 ## Trade-offs & assumptions
 
