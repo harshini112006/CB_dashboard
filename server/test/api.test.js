@@ -64,6 +64,16 @@ test('filters: outlet, hour range, weekday, bill, item', { skip }, async () => {
   assert.equal((await json('/api/dashboard?weekdays=3')).body.kpis.orders, 1); // 2025-07-01 is a Tuesday (dow 3)
 });
 
+test('dashboard returns a previous-period comparison only for explicit ranges', { skip }, async () => {
+  assert.equal((await json('/api/dashboard')).body.previous, null);
+  const { body } = await json('/api/dashboard?from=2025-07-02&to=2025-07-03');
+  assert.equal(body.kpis.orders, 2);
+  assert.deepEqual([body.previous.from, body.previous.to], ['2025-06-30', '2025-07-01']);
+  assert.deepEqual([body.previous.orders, body.previous.revenue], [1, 450]);
+  // a window that would start before the dataset has no baseline
+  assert.equal((await json('/api/dashboard?from=2025-07-01&to=2025-07-03')).body.previous, null);
+});
+
 test('menu: item stats use distinct orders; basket pairs counted', { skip }, async () => {
   const { body } = await json('/api/menu');
   const zinger = body.items.find((i) => i.name === 'Zinger');

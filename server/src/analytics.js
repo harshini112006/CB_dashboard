@@ -93,6 +93,34 @@ export async function dashboard(f, granularity) {
   return out;
 }
 
+// Headline KPIs only (cheap): used for the "vs previous period" comparison.
+export async function kpisFor(f) {
+  const [r] = await lines()
+    .aggregate([
+      { $match: toMatch(f) },
+      { $group: { _id: '$billNo', revenue: { $sum: '$revenue' }, units: { $sum: '$qty' } } },
+      { $group: { _id: null, orders: { $sum: 1 }, revenue: { $sum: '$revenue' }, units: { $sum: '$units' } } },
+    ], { allowDiskUse: true })
+    .toArray();
+  if (!r) return { orders: 0, revenue: 0, units: 0, aov: 0 };
+  return { orders: r.orders, revenue: r.revenue, units: r.units, aov: r.revenue / r.orders };
+}
+
+// The window of equal length that ends the day before `from`. Null when no explicit range is selected.
+export function previousWindow(f, minDate) {
+  if (!f.from || !f.to) return null;
+  const day = 86400000;
+  const from = Date.parse(f.from);
+  const to = Date.parse(f.to);
+  if (to < from) return null;
+  const len = Math.round((to - from) / day) + 1;
+  const prevTo = from - day;
+  const prevFrom = prevTo - (len - 1) * day;
+  if (minDate && prevTo < Date.parse(minDate)) return null; // nothing before the dataset starts
+  const iso = (ms) => new Date(ms).toISOString().slice(0, 10);
+  return { from: iso(prevFrom), to: iso(prevTo) };
+}
+
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 const pct = (a, b) => (b ? ((a / b) * 100).toFixed(1) + '%' : '0%');
 
@@ -102,7 +130,7 @@ export function buildInsights(d) {
   const total = d.kpis.revenue;
   if (!d.kpis.orders) return out;
   const o = d.outlets[0];
-  if (o) out.push(`${o.name} is the top outlet with ${inr(o.revenue)} (${pct(o.revenue, total)} of revenue).`);
+  if (o && d.outlets.length > 1) out.push(`${o.name} is the top outlet with ${inr(o.revenue)} (${pct(o.revenue, total)} of revenue).`);
   const best = [...d.outlets].sort((a, b) => b.revenue / b.orders - a.revenue / a.orders)[0];
   if (best && d.outlets.length > 1) out.push(`${best.name} has the highest average order value at ${inr(best.revenue / best.orders)}.`);
   const peak = [...d.hours].sort((a, b) => b.orders - a.orders)[0];

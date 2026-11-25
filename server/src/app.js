@@ -65,10 +65,18 @@ export function createApp({ staticDir = path.resolve(__dirname, '../../client/di
     const t0 = performance.now();
     const f = parseFilters(req.query);
     const { value, cached } = await dashboardFor(f, req.query.granularity);
+    // Period-over-period: only when an explicit date range is chosen (same-length window just before it).
+    let previous = null;
+    const win = analytics.previousWindow(f, (await getMeta()).minDate);
+    if (win) {
+      const pf = { ...f, ...win };
+      const prev = (await cache.wrap(cacheKey('kpi', pf), () => analytics.kpisFor(pf))).value;
+      if (prev.orders > 0) previous = { ...win, ...prev };
+    }
     res
       .set('X-Cache', cached ? 'HIT' : 'MISS')
       .set('X-Response-Time', `${(performance.now() - t0).toFixed(0)}ms`)
-      .json(value);
+      .json({ ...value, previous });
   }));
 
   // ---- page-level reports (all share the same filters + cache)
