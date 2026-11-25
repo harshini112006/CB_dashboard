@@ -59,6 +59,8 @@ for await (const ws of reader) {
       price,
       qty,
       revenue: price * qty, // derived once at load time, not per query
+      hour: ts.getUTCHours(), // precomputed so hour / weekday filters are plain indexable fields
+      dow: ts.getUTCDay() + 1, // 1 = Sunday ... 7 = Saturday (same as Mongo $dayOfWeek)
     });
     if (buf.length >= BATCH) await flush();
   }
