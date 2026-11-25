@@ -1,36 +1,15 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import { ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { useId } from 'react';
+import { ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
 import Icon from './Icons.jsx';
-import { spot } from './Motion.jsx';
+import { spot, useCountUp } from './Motion.jsx';
 import { num, money, moneyCompact, fmtDate } from '../format.js';
 
-// Animates a number towards its target (respects reduced-motion; always lands on the exact value).
-function useCountUp(target, ms = 650) {
-  const [v, setV] = useState(target);
-  const from = useRef(target);
-  useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setV(target); from.current = target; return undefined; }
-    const start = performance.now();
-    const a = from.current;
-    let raf;
-    const tick = (t) => {
-      const p = Math.min(1, (t - start) / ms);
-      setV(a + (target - a) * (1 - (1 - p) ** 3));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    const done = setTimeout(() => { setV(target); from.current = target; }, ms + 60); // in case frames are throttled
-    return () => { cancelAnimationFrame(raf); clearTimeout(done); from.current = target; };
-  }, [target, ms]);
-  return v;
-}
-
-function Spark({ data, color }) {
+export function Spark({ data, color, height = 40 }) {
   const id = useId().replace(/:/g, '');
-  if (!data || data.length < 2) return <div className="spark" />;
+  if (!data || data.length < 2) return <div className="spark" style={{ height }} />;
   const rows = data.map((y, i) => ({ i, y }));
   return (
-    <div className="spark" aria-hidden>
+    <div className="spark" style={{ height }} aria-hidden>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={rows} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
           <defs>
@@ -38,14 +17,17 @@ function Spark({ data, color }) {
               <stop offset="0%" stopColor={color} stopOpacity={0.35} /><stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <Area type="monotone" dataKey="y" stroke={color} strokeWidth={1.8} fill={`url(#${id})`} dot={false} isAnimationActive animationDuration={1100} animationEasing="ease-out" />
+          {/* Scale to the series' own range (standard for sparklines) so the shape is visible, not a flat line near the top. */}
+          <YAxis hide domain={[(min) => min - (Math.abs(min) * 0.04 || 1), 'dataMax']} />
+          <Area type="monotone" dataKey="y" stroke={color} strokeWidth={1.8} fill={`url(#${id})`} dot={false} baseValue="dataMin"
+            isAnimationActive animationDuration={1100} animationEasing="ease-out" />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-function Delta({ cur, prev, title }) {
+export function Delta({ cur, prev, title }) {
   if (prev == null || !prev) return null;
   const ch = ((cur - prev) / prev) * 100;
   const up = ch >= 0;

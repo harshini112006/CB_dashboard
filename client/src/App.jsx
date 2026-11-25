@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { fetchSession, logout } from './api.js';
 import { FiltersProvider } from './filters-context.jsx';
 import Shell from './components/Shell.jsx';
+import { ToastProvider } from './components/Toast.jsx';
 import Login from './components/Login.jsx';
 import Overview from './pages/Overview.jsx';
 import Menu from './pages/Menu.jsx';
@@ -44,6 +45,7 @@ export default function App() {
   }
 
   return (
+    <ToastProvider>
     <FiltersProvider>
       <Shell
         session={session} dark={dark} toggleTheme={toggleTheme}
@@ -59,5 +61,6 @@ export default function App() {
         </Routes>
       </Shell>
     </FiltersProvider>
+    </ToastProvider>
   );
 }

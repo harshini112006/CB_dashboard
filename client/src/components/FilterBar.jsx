@@ -8,16 +8,18 @@ const WD_NAME = Object.fromEntries(WEEKDAYS);
 const HOURS = Array.from({ length: 24 }, (_, h) => [String(h), `${String(h).padStart(2, '0')}:00`]);
 const shift = (iso, days) => new Date(Date.parse(iso) + days * 864e5).toISOString().slice(0, 10);
 
+// Presets are relative to the dataset's last day (the data ends in the past, not "today").
+export const datePresets = (meta) => (meta ? [
+  ['Last 7 days', shift(meta.maxDate, -6), meta.maxDate],
+  ['Last 30 days', shift(meta.maxDate, -29), meta.maxDate],
+  ['Last 90 days', shift(meta.maxDate, -89), meta.maxDate],
+  ['Last 6 months', shift(meta.maxDate, -182), meta.maxDate],
+  ['All time', '', ''],
+] : []);
+
 function DateRange({ meta, filters, setFilters }) {
   const set = (k) => (e) => setFilters((f) => ({ ...f, [k]: e.target.value }));
-  // Presets are relative to the dataset's last day (the data ends in the past, not "today").
-  const presets = meta ? [
-    ['Last 7 days', shift(meta.maxDate, -6), meta.maxDate],
-    ['Last 30 days', shift(meta.maxDate, -29), meta.maxDate],
-    ['Last 90 days', shift(meta.maxDate, -89), meta.maxDate],
-    ['Last 6 months', shift(meta.maxDate, -182), meta.maxDate],
-    ['All time', '', ''],
-  ] : [];
+  const presets = datePresets(meta);
   const current = presets.find(([, f, t]) => f === filters.from && t === filters.to);
   const label = current ? current[0] : `${fmtDate(filters.from) || 'Start'} – ${fmtDate(filters.to) || 'End'}`;
   return (

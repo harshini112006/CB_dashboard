@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { fetchDashboard } from '../api.js';
 import { useApi } from '../hooks.js';
 import { useFilters } from '../filters-context.jsx';
+import Hero from '../components/Hero.jsx';
 import Kpis from '../components/Kpis.jsx';
 import Insights from '../components/Insights.jsx';
 import RecordsTable from '../components/RecordsTable.jsx';
@@ -10,7 +11,7 @@ import { Reveal } from '../components/Motion.jsx';
 import { TrendChart, BarBreakdown, DonutBreakdown, TopItems, HourChart, WeekdayChart } from '../components/Charts.jsx';
 
 export default function Overview({ session }) {
-  const { filters, toggle, reset } = useFilters();
+  const { filters, toggle, reset, meta } = useFilters();
   const [granularity, setGranularity] = useState('');
   const { data, loading, error } = useApi((s) => fetchDashboard(filters, granularity, s), [filters, granularity]);
 
@@ -18,6 +19,7 @@ export default function Overview({ session }) {
     <PageState kind="dashboard" data={data} loading={loading} error={error} empty={data?.kpis.orders === 0} onReset={reset}>
       {data && (
         <>
+          <Hero data={data} filters={filters} meta={meta} />
           <Kpis data={data} />
           <Reveal delay={80}><Insights items={data.insights} filters={filters} aiEnabled={session.features?.ai} /></Reveal>
           <Reveal delay={120}><TrendChart data={data} granularity={granularity} onGranularity={setGranularity} /></Reveal>
@@ -27,7 +29,7 @@ export default function Overview({ session }) {
             <DonutBreakdown title="Payment / channel" rows={data.settlements} selected={filters.settlements} onPick={(v) => toggle('settlements', v)} />
           </section></Reveal>
           <Reveal><section className="grid g2">
-            <BarBreakdown title="Revenue by category" rows={data.groups} selected={filters.groups} onPick={(v) => toggle('groups', v)} />
+            <BarBreakdown title="Revenue by category" rows={data.groups} selected={filters.groups} onPick={(v) => toggle('groups', v)} color="#2e86ab" />
             <TopItems byRevenue={data.topItemsByRevenue} byUnits={data.topItemsByUnits} />
           </section></Reveal>
           <Reveal><section className="grid g2">

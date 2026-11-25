@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, PieChart, Pie, Label, LabelList, ReferenceLine,
 } from 'recharts';
@@ -21,9 +21,23 @@ export function ChartCard({ title, subtitle, right, children, className = '' }) 
   );
 }
 
+// Segmented control with a pill that slides to the selected option.
 export function Toggle({ options, value, onChange, label }) {
+  const ref = useRef(null);
+  const [pill, setPill] = useState(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = ref.current?.querySelector('button.on');
+      if (el) setPill({ x: el.offsetLeft, w: el.offsetWidth });
+    };
+    measure();
+    const ro = 'ResizeObserver' in window ? new ResizeObserver(measure) : null;
+    if (ro && ref.current) ro.observe(ref.current);
+    return () => ro?.disconnect();
+  }, [value, options.length]);
   return (
-    <div className="seg" role="group" aria-label={label}>
+    <div className="seg" role="group" aria-label={label} ref={ref}>
+      {pill && <span className="seg-pill" aria-hidden style={{ width: pill.w, transform: `translateX(${pill.x}px)` }} />}
       {options.map(([v, text]) => (
         <button key={v} type="button" className={value === v ? 'on' : ''} aria-pressed={value === v} onClick={() => onChange(v)}>{text}</button>
       ))}

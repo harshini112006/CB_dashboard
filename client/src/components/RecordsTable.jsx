@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchRecords } from '../api.js';
 import { num, money } from '../format.js';
 import { TypePill } from './Pills.jsx';
+import Pager from './Pager.jsx';
 
 const fmtTs = (iso) => iso.replace('T', ' ').slice(0, 16);
 
@@ -25,12 +26,7 @@ export default function RecordsTable({ filters }) {
   return (
     <section className="card table-card">
       <div className="chart-head">
-        <h2>Order line items <small>{res ? `${num(res.total)} records` : ''}</small></h2>
-        <div className="pager">
-          <button className="btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹ Prev</button>
-          <span>Page {num(page)} of {res ? num(res.pages) : '…'}</span>
-          <button className="btn" disabled={!res || page >= res.pages} onClick={() => setPage(page + 1)}>Next ›</button>
-        </div>
+        <div><h2>Order line items</h2><p className="sub">{res ? `${num(res.total)} records · newest first` : 'Loading…'}</p></div>
       </div>
       {err && <div className="error">{err}</div>}
       <div className="table-wrap">
@@ -38,7 +34,7 @@ export default function RecordsTable({ filters }) {
           <thead>
             <tr><th>Bill</th><th>Date &amp; time</th><th>Outlet</th><th>Item</th><th>Category</th><th>Type</th><th>Payment</th><th className="r">Price</th><th className="r">Qty</th><th className="r">Total</th></tr>
           </thead>
-          <tbody>
+          <tbody key={page}>
             {(res?.rows ?? []).map((r, i) => (
               <tr key={`${r.billNo}-${i}`} style={{ '--r': Math.min(i, 14) }}>
                 <td>{r.billNo}</td><td>{fmtTs(r.ts)}</td><td>{r.outlet}</td><td>{r.item}</td><td>{r.group}</td>
@@ -49,6 +45,12 @@ export default function RecordsTable({ filters }) {
           </tbody>
         </table>
       </div>
+      {res && (
+        <div className="table-foot">
+          <span className="hint">Page {num(page)} of {num(res.pages)}</span>
+          <Pager page={page} pages={Math.min(res.pages, 10000)} onPage={setPage} />
+        </div>
+      )}
     </section>
   );
 }
