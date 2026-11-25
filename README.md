@@ -37,7 +37,8 @@ Every page shows loading skeletons, error and empty states ("No orders match the
 - **Compact filter bar** – date-range popover with presets, one-click dropdowns, a "More filters" panel (weekday, time of day, bill, items) and **removable chips** for every active filter; sticky on wide screens.
 - **KPI cards** – animated numbers, sparklines, and **change vs the previous period** (an equal-length window just before the selected range; shown whenever a date range is chosen).
 - **Charts** – value labels, hover tooltips, click-to-filter, peak/average markers, donut totals with clickable legends.
-- **Feedback states** – layout-shaped skeleton loaders, friendly empty state, dimmed (not blank) refresh, error banner, `prefers-reduced-motion` respected.
+- **Motion & effects** – page transitions, staggered card/row entrances, scroll-reveal sections (IntersectionObserver), animated charts and sparklines, a thin top loading bar tied to in-flight requests, cursor-follow spotlight on cards, glass (blurred) filter bar, sliding order drawer with blurred backdrop, heatmap cells that ripple in, and drifting gradient blobs on the login screen. All of it is pure CSS/React (no animation library) and switches off under `prefers-reduced-motion`.
+- **Feedback states** – layout-shaped skeleton loaders, friendly empty state, dimmed (not blank) refresh, error banner.
 - **Accessibility** – keyboard-reachable controls with visible focus, ARIA labels/pressed states, semantic tables, Escape closes popovers and the order drawer.
 
 ### Bonus items (all implemented)
