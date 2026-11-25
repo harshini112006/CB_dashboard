@@ -6,3 +6,7 @@ data/*.xlsx
 data/*.csv
 .DS_Store
 data/mongo/
+
+# local secrets / per-environment env files
+.env.*
+!.env.example
