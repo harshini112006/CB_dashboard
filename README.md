@@ -106,14 +106,18 @@ docker compose run --rm seed        # one-off: load data/data.xlsx
 
 ## Deployment
 
-Two supported ways to host it (both use the same **MongoDB Atlas** free M0 cluster):
+It is **one app on one branch (`main`)**: a React front end (`client/`) and an Express API (`server/`) backed by MongoDB Atlas.
 
-- **Vercel (serverless)** – the React app is served as static files and the Express API runs as one serverless function (`api/index.mjs`), configured by `vercel.json`. Import the repo in Vercel and set the environment variables below; no other settings needed. The API connects to MongoDB on its first request and reuses the connection while the instance is warm, and `maxDuration` is raised to 60 s so large CSV exports can finish.
-- **Render / Docker (long-running server)** – Express serves `/api/*` and the built React app from one process (see steps 3–5).
+### Quick deploy on Vercel (4 steps)
 
-> _Note:_ an earlier `vercel.json` used Vercel's beta **Container Runtime** (building the `Dockerfile`); that build failed at Vercel's "pushing image" step, so the config now uses Vercel's standard static + serverless-function setup. The `Dockerfile` is still used by `docker compose` and by container hosts.
+1. **Import** this repo in Vercel (Add New → Project). Framework Preset: **Other**. `vercel.json` already sets the install/build commands, serves `client/dist` as the site and runs the API as one serverless function (`api/index.mjs`) – nothing else to configure.
+2. **Add one environment variable** (Settings → Environment Variables): `MONGODB_URI` = your Atlas connection string. That's all that is required. The login is **off** unless you also set `AUTH_PASSWORD`; the AI summary button appears only if you set `ANTHROPIC_API_KEY`.
+3. **Deploy / Redeploy.**
+4. Open `https://<your-app>.vercel.app/api/health` – it should report `"records":300000`; then open the site root.
 
-Environment variables (Vercel: *Project → Settings → Environment Variables*): `MONGODB_URI`, `MONGODB_DB=cb_dashboard`, `AUTH_USER`, `AUTH_PASSWORD`, `AUTH_SECRET` (any long random string), and optionally `ANTHROPIC_API_KEY`.
+Other hosts work too (they run the same code): **Render** via `render.yaml` (one Node web service), or any container host via the `Dockerfile` / `docker compose`. Vercel's beta *Container Runtime* is intentionally not used (its image push step failed for this project).
+
+### Full setup details
 
 1. **Atlas** – create a free M0 cluster, add a database user, allow network access (`0.0.0.0/0` for the demo), copy the `mongodb+srv://…` URI.
 2. **Load the data once from your machine** (the Excel file is not stored in git):
