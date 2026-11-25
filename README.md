@@ -115,7 +115,13 @@ It is **one app on one branch (`main`)**: a React front end (`client/`) and an E
 3. **Deploy / Redeploy.**
 4. Open `https://<your-app>.vercel.app/api/health` – it should report `"records":300000`; then open the site root.
 
-Other hosts work too (they run the same code): **Render** via `render.yaml` (one Node web service), or any container host via the `Dockerfile` / `docker compose`. Vercel's beta *Container Runtime* is intentionally not used (its image push step failed for this project).
+### Quick deploy on Render (alternative, 3 steps)
+
+1. In Render choose **New → Blueprint**, connect this repo (it reads `render.yaml`).
+2. When asked, paste your Atlas connection string as `MONGODB_URI`. Nothing else is required (no login unless you add `AUTH_PASSWORD`).
+3. **Apply.** Open `https://<your-service>.onrender.com/api/health` – it should report `"records":300000`. _(Free instances sleep after ~15 min idle, so the first visit afterwards takes about a minute.)_
+
+Any container host also works via the `Dockerfile` / `docker compose`. Vercel's beta *Container Runtime* is intentionally not used (its image push step failed for this project).
 
 ### Full setup details
 
