@@ -1,0 +1,16 @@
+# Render Blueprint: one web service serves both the API and the built React app.
+services:
+  - type: web
+    name: cb-dashboard
+    runtime: node
+    plan: free
+    buildCommand: npm --prefix server install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false # paste your MongoDB Atlas connection string in the Render dashboard
+      - key: MONGODB_DB
+        value: cb_dashboard
