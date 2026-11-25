@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { login } from '../api.js';
+import { LogoMark } from './Logo.jsx';
 
 export default function Login({ onSuccess }) {
   const [username, setUsername] = useState('');
@@ -18,7 +19,7 @@ export default function Login({ onSuccess }) {
     <div className="login-wrap">
       <span className="blob b1" aria-hidden /><span className="blob b2" aria-hidden />
       <form className="card login" onSubmit={submit}>
-        <div className="logo" aria-hidden>🍔</div>
+        <LogoMark size={60} />
         <div>
           <h1>Burger Town Analytics</h1>
           <p className="sub">Sign in to view the dashboard</p>

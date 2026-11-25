@@ -45,6 +45,7 @@ export default function Menu() {
   const { data, loading, error } = useApi((s) => fetchMenu(filters, s), [filters]);
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('all');
+  const [hl, setHl] = useState('all');
   const [sort, setSort] = useState({ key: 'revenue', dir: -1 });
 
   const groups = useMemo(() => [...new Set((data?.items ?? []).map((i) => i.group))].sort(), [data]);
@@ -74,10 +75,10 @@ export default function Menu() {
       {data && (
         <>
           <section className="kpis" aria-label="Menu summary">
-            <Stat i={0} label="Items on the menu" icon="menu" color="#f2542d" value={t.items} format={num} sub="distinct items sold" />
-            <Stat i={1} label="Units sold" icon="box" color="#f2a900" value={t.units} format={num} sub="across all orders" />
-            <Stat i={2} label="Menu revenue" icon="dollar" color="#76b041" value={t.revenue} format={moneyCompact} sub={money(t.revenue)} />
-            <Stat i={3} label="Avg price per unit" icon="tag" color="#2e86ab" value={t.units ? t.revenue / t.units : 0} format={money} sub="revenue ÷ units" />
+            <Stat i={0} label="Items on the menu" icon="menu" color="var(--s2)" value={t.items} format={num} sub="distinct items sold" />
+            <Stat i={1} label="Units sold" icon="box" color="var(--s3)" value={t.units} format={num} sub="across all orders" />
+            <Stat i={2} label="Menu revenue" icon="dollar" color="var(--s1)" value={t.revenue} format={moneyCompact} sub={money(t.revenue)} />
+            <Stat i={3} label="Avg price per unit" icon="tag" color="var(--s4)" value={t.units ? t.revenue / t.units : 0} format={money} sub="revenue ÷ units" />
           </section>
 
           <section className="podium" aria-label="Top sellers">
@@ -96,7 +97,8 @@ export default function Menu() {
           </section>
 
           <Reveal><section className="grid g2">
-            <ChartCard title="Price vs volume" subtitle="Each dot is a menu item · size = revenue">
+            <ChartCard title="Price vs volume" subtitle="Each dot is a menu item · size = revenue · hover for details"
+              right={<label className="inline">Highlight<select value={hl} onChange={(e) => setHl(e.target.value)}><option value="all">All categories</option>{groups.map((g) => <option key={g} value={g}>{g}</option>)}</select></label>}>
               <ResponsiveContainer width="100%" height={330}>
                 <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                   <CartesianGrid stroke="var(--grid)" />
@@ -104,11 +106,13 @@ export default function Menu() {
                   <YAxis type="number" dataKey="y" name="Units" tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compact} width={48} />
                   <ZAxis type="number" dataKey="revenue" range={[50, 420]} name="Revenue" />
                   <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ScatterTip />} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {byGroup.map(([g, pts], i) => (
-                    <Scatter key={g} name={g} data={pts} fill={COLORS[i % COLORS.length]} fillOpacity={0.82}
-                      isAnimationActive animationDuration={900} animationEasing="ease-out" />
-                  ))}
+                  {byGroup.map(([g, pts]) => {
+                    const on = hl === 'all' || hl === g;
+                    return (
+                      <Scatter key={g} name={g} data={pts} fill={on ? 'var(--s1)' : 'var(--muted)'} fillOpacity={on ? 0.85 : 0.18}
+                        stroke="var(--card)" strokeWidth={2} isAnimationActive animationDuration={900} animationEasing="ease-out" />
+                    );
+                  })}
                 </ScatterChart>
               </ResponsiveContainer>
             </ChartCard>

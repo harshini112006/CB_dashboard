@@ -67,7 +67,7 @@ export default function Outlets() {
                   <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compact} width={48} />
                   <Tooltip cursor={{ fill: 'var(--hover)' }} formatter={(v, n) => [num(v), n]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {data.orderTypes.map((t, i) => <Bar key={t} dataKey={t} stackId="a" fill={COLORS[i]} radius={i === data.orderTypes.length - 1 ? [5, 5, 0, 0] : 0} {...ANIM} />)}
+                  {data.orderTypes.map((t, i) => <Bar key={t} dataKey={t} stackId="a" fill={COLORS[i]} stroke="var(--card)" strokeWidth={2} radius={i === data.orderTypes.length - 1 ? [4, 4, 0, 0] : 0} {...ANIM} />)}
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -79,7 +79,7 @@ export default function Outlets() {
                   <YAxis type="category" dataKey="name" tick={AXIS} tickLine={false} axisLine={false} width={90} />
                   <Tooltip cursor={{ fill: 'var(--hover)' }} formatter={(v, n) => [v + '%', n]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {data.channels.map((c, i) => <Bar key={c} dataKey={c} stackId="a" fill={COLORS[i]} {...ANIM} />)}
+                  {data.channels.map((c, i) => <Bar key={c} dataKey={c} stackId="a" fill={COLORS[i]} stroke="var(--card)" strokeWidth={2} {...ANIM} />)}
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -94,7 +94,7 @@ export default function Outlets() {
                   <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={moneyCompact} width={64} />
                   <Tooltip formatter={(v, n) => [money(v), n]} />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  {data.outletNames.map((n) => <Line key={n} type="monotone" dataKey={n} stroke={colorOf(n)} strokeWidth={2.2} dot={false} activeDot={{ r: 5 }} {...ANIM} animationDuration={1300} />)}
+                  {data.outletNames.map((n) => <Line key={n} type="monotone" dataKey={n} stroke={colorOf(n)} strokeWidth={2} dot={false} activeDot={{ r: 5 }} {...ANIM} animationDuration={1300} />)}
                 </LineChart>
               </ResponsiveContainer>
             </ChartCard>

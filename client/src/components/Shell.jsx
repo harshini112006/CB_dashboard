@@ -6,6 +6,7 @@ import { num, fmtDate } from '../format.js';
 import FilterBar, { datePresets } from './FilterBar.jsx';
 import Icon from './Icons.jsx';
 import { TopProgress } from './Motion.jsx';
+import Logo from './Logo.jsx';
 import { useToast } from './Toast.jsx';
 import CommandPalette from './CommandPalette.jsx';
 
@@ -86,10 +87,7 @@ export default function Shell({ session, dark, toggleTheme, onSignOut, children 
 
       {/* Desktop sidebar. Links carry the query string, so active filters follow you between pages. */}
       <aside className="sidebar">
-        <div className="brand">
-          <span className="logo" aria-hidden>🍔</span>
-          <div className="lbl"><strong>Burger Town</strong><small>Analytics</small></div>
-        </div>
+        <Logo />
         <button className="side-search" onClick={() => setPalette(true)} title="Search (Ctrl K)">
           <Icon name="search" size={16} /><span className="lbl">Search…</span><kbd className="lbl">{isMac ? '⌘' : 'Ctrl'} K</kbd>
         </button>
@@ -111,7 +109,7 @@ export default function Shell({ session, dark, toggleTheme, onSignOut, children 
 
       <div className="content">
         <header className="mobile-top">
-          <div className="brand"><span className="logo" aria-hidden>🍔</span><strong>Burger Town</strong></div>
+          <Logo size={36} />
           <div className="actions">
             <button className="btn icon" onClick={() => setPalette(true)} aria-label="Search"><Icon name="search" size={17} /></button>
             <button className="btn icon" onClick={toggleTheme} aria-label="Toggle dark mode"><Icon name={dark ? 'sun' : 'moon'} size={17} /></button>

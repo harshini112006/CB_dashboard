@@ -5,7 +5,10 @@ import {
 import { num, money, moneyCompact, compact, dateLabel, hourLabel, hourLong, pct, fmtDate } from '../format.js';
 
 // Categorical palette: distinct in light and dark, ordered for colour-blind friendliness.
-export const COLORS = ['#f2542d', '#2e86ab', '#76b041', '#f2a900', '#8e6c8a', '#17bebb', '#a8554e'];
+// Validated categorical palette (see styles.css --s1..--s8): light and dark steps swap via CSS variables.
+export const COLORS = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)', 'var(--s7)', 'var(--s8)'];
+// One colour per measure, used consistently across every page.
+export const MEASURE = { revenue: 'var(--s1)', orders: 'var(--s2)', units: 'var(--s3)', aov: 'var(--s4)' };
 const AXIS = { fontSize: 12, fill: 'var(--muted)' };
 const dim = (selected, name) => (selected.length && !selected.includes(name) ? 0.28 : 1);
 
@@ -53,7 +56,7 @@ function Tip({ active, payload, label, labelFmt }) {
       <b>{labelFmt ? labelFmt(label ?? p.name) : label ?? p.name}</b>
       {p.revenue != null && <div><i style={{ background: COLORS[0] }} />Revenue <span>{money(p.revenue)}</span></div>}
       {p.orders != null && <div><i style={{ background: COLORS[1] }} />Orders <span>{num(p.orders)}</span></div>}
-      {p.units != null && <div><i style={{ background: COLORS[3] }} />Units <span>{num(p.units)}</span></div>}
+      {p.units != null && <div><i style={{ background: COLORS[2] }} />Units <span>{num(p.units)}</span></div>}
     </div>
   );
 }
@@ -63,6 +66,7 @@ export function TrendChart({ data, granularity, onGranularity }) {
   const g = data.granularity;
   const rows = data.trend.map((r) => ({ ...r, label: dateLabel(r.date, g) }));
   const fmt = metric === 'revenue' ? moneyCompact : compact;
+  const color = MEASURE[metric];
   const total = rows.reduce((s, r) => s + r[metric], 0);
   const avg = rows.length ? total / rows.length : 0;
   const peak = rows.reduce((b, r) => (r[metric] > (b?.[metric] ?? -1) ? r : b), null);
@@ -86,8 +90,8 @@ export function TrendChart({ data, granularity, onGranularity }) {
         <AreaChart data={rows} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS[0]} stopOpacity={0.32} />
-              <stop offset="100%" stopColor={COLORS[0]} stopOpacity={0.02} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={color} stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="var(--grid)" vertical={false} />
@@ -95,7 +99,7 @@ export function TrendChart({ data, granularity, onGranularity }) {
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={fmt} width={64} />
           <Tooltip content={<Tip labelFmt={(l) => `${g === 'week' ? 'Week of ' : ''}${l}`} />} />
           <ReferenceLine y={avg} stroke="var(--muted)" strokeDasharray="4 4" strokeOpacity={0.6} />
-          <Area type="monotone" dataKey={metric} stroke={COLORS[0]} strokeWidth={2.5} fill="url(#trendFill)"
+          <Area type="monotone" dataKey={metric} stroke={color} strokeWidth={2} fill="url(#trendFill)"
             dot={rows.length < 40} activeDot={{ r: 5 }} isAnimationActive={rows.length < 120} animationDuration={1000} animationEasing="ease-out" />
         </AreaChart>
       </ResponsiveContainer>
@@ -104,7 +108,7 @@ export function TrendChart({ data, granularity, onGranularity }) {
 }
 
 // Horizontal bars with value labels; clicking a bar toggles it as a dashboard filter (cross-filtering).
-export function BarBreakdown({ title, subtitle = 'Click a bar to filter', rows, selected, onPick, color = COLORS[0] }) {
+export function BarBreakdown({ title, subtitle = 'Click a bar to filter', rows, selected, onPick, color = MEASURE.revenue }) {
   const h = Math.max(220, rows.length * 40 + 20);
   return (
     <ChartCard title={title} subtitle={subtitle}>
@@ -114,7 +118,7 @@ export function BarBreakdown({ title, subtitle = 'Click a bar to filter', rows, 
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" tick={AXIS} tickLine={false} axisLine={false} width={96} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip />} />
-          <Bar dataKey="revenue" radius={[0, 6, 6, 0]} cursor="pointer" onClick={(d) => onPick(d.name)} isAnimationActive animationDuration={800} animationEasing="ease-out">
+          <Bar dataKey="revenue" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d) => onPick(d.name)} isAnimationActive animationDuration={800} animationEasing="ease-out">
             {rows.map((r) => <Cell key={r.name} fill={color} fillOpacity={dim(selected, r.name)} />)}
             <LabelList dataKey="revenue" position="right" formatter={moneyCompact} style={{ fontSize: 12, fill: 'var(--text)', fontWeight: 600 }} />
           </Bar>
@@ -124,7 +128,14 @@ export function BarBreakdown({ title, subtitle = 'Click a bar to filter', rows, 
   );
 }
 
-export function DonutBreakdown({ title, rows, selected, onPick }) {
+// Colour follows the entity, never its rank: slot = position in the fixed (alphabetical) domain list,
+// so "Delivery" is the same colour on every chart and page regardless of how the data is sorted.
+export const colorFor = (domain, name, i = 0) => {
+  const at = domain ? domain.indexOf(name) : -1;
+  return COLORS[(at >= 0 ? at : i) % COLORS.length];
+};
+
+export function DonutBreakdown({ title, rows, selected, onPick, domain }) {
   const total = rows.reduce((s, r) => s + r.orders, 0);
   return (
     <ChartCard title={title} subtitle="Share of orders · click to filter">
@@ -132,7 +143,7 @@ export function DonutBreakdown({ title, rows, selected, onPick }) {
         <PieChart>
           <Pie data={rows} dataKey="orders" nameKey="name" innerRadius={58} outerRadius={84} paddingAngle={2} cursor="pointer"
             onClick={(d) => onPick(d.name)} isAnimationActive animationDuration={800} animationEasing="ease-out" stroke="var(--card)" strokeWidth={2}>
-            {rows.map((r, i) => <Cell key={r.name} fill={COLORS[i % COLORS.length]} fillOpacity={dim(selected, r.name)} />)}
+            {rows.map((r, i) => <Cell key={r.name} fill={colorFor(domain, r.name, i)} fillOpacity={dim(selected, r.name)} />)}
             <Label position="center" content={({ viewBox }) => (
               <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
                 <tspan x={viewBox.cx} dy="-0.2em" fontSize="20" fontWeight="700" fill="var(--text)">{compact(total)}</tspan>
@@ -147,7 +158,7 @@ export function DonutBreakdown({ title, rows, selected, onPick }) {
         {rows.map((r, i) => (
           <li key={r.name}>
             <button type="button" onClick={() => onPick(r.name)} aria-pressed={selected.includes(r.name)} style={{ opacity: dim(selected, r.name) }}>
-              <i style={{ background: COLORS[i % COLORS.length] }} /><span>{r.name}</span><b>{pct(r.orders, total)}</b>
+              <i style={{ background: colorFor(domain, r.name, i) }} /><span>{r.name}</span><b>{pct(r.orders, total)}</b>
             </button>
           </li>
         ))}
@@ -168,7 +179,7 @@ export function TopItems({ byRevenue, byUnits }) {
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" tick={AXIS} tickLine={false} axisLine={false} width={160} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip />} />
-          <Bar dataKey={by} fill={COLORS[1]} radius={[0, 6, 6, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out">
+          <Bar dataKey={by} fill={by === 'revenue' ? MEASURE.revenue : MEASURE.units} radius={[0, 4, 4, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out">
             <LabelList dataKey={by} position="right" formatter={by === 'revenue' ? moneyCompact : compact} style={{ fontSize: 12, fill: 'var(--text)', fontWeight: 600 }} />
           </Bar>
         </BarChart>
@@ -191,8 +202,8 @@ export function HourChart({ rows }) {
           <XAxis dataKey="name" tick={AXIS} tickLine={false} axisLine={false} />
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={compact} width={44} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip labelFmt={(l) => l} />} />
-          <Bar dataKey="orders" radius={[5, 5, 0, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out">
-            {data.map((r) => <Cell key={r.hour} fill={r.hour === peak?.hour ? COLORS[0] : COLORS[3]} fillOpacity={r.hour === peak?.hour ? 1 : 0.8} />)}
+          <Bar dataKey="orders" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out">
+            {data.map((r) => <Cell key={r.hour} fill={MEASURE.orders} fillOpacity={r.hour === peak?.hour ? 1 : 0.5} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -211,7 +222,7 @@ export function WeekdayChart({ rows }) {
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={moneyCompact} width={64} />
           <Tooltip cursor={{ fill: 'var(--hover)' }} content={<Tip />} />
           <ReferenceLine y={avg} stroke="var(--muted)" strokeDasharray="4 4" strokeOpacity={0.7} />
-          <Bar dataKey="revenue" fill={COLORS[2]} radius={[5, 5, 0, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out" />
+          <Bar dataKey="revenue" fill={MEASURE.revenue} radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800} animationEasing="ease-out" />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

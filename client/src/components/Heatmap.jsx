@@ -17,7 +17,7 @@ export default function Heatmap({ rows, unit = 'orders' }) {
             const v = r.values[h];
             return (
               <span key={h} role="cell" className="heat-cell" title={`${r.name} · ${String(h).padStart(2, '0')}:00 · ${v.toLocaleString('en-IN')} ${unit}`}
-                style={{ '--d': ri + hi, background: `color-mix(in srgb, var(--accent) ${Math.round((v / max) * 100)}%, var(--hover))` }} />
+                style={{ '--d': ri + hi, background: v ? `color-mix(in srgb, var(--s1) ${Math.round(10 + (v / max) * 90)}%, var(--card))` : 'var(--hover)' }} />
             );
           })}
         </div>

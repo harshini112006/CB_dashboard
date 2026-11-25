@@ -7,6 +7,7 @@ import { PageState } from '../components/PageState.jsx';
 import { TypePill } from '../components/Pills.jsx';
 import Pager from '../components/Pager.jsx';
 import Icon from '../components/Icons.jsx';
+import { LogoMark } from '../components/Logo.jsx';
 import { CountUp, spot } from '../components/Motion.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { num, money, fmtDate } from '../format.js';
@@ -21,10 +22,10 @@ function Strip({ filters }) {
   const k = data.kpis;
   const del = data.orderTypes.find((t) => t.name === 'Delivery');
   const items = [
-    ['bag', 'Orders', k.orders, num, '#2e86ab'],
-    ['tag', 'Average value', k.aov, money, '#76b041'],
-    ['box', 'Items per order', k.itemsPerOrder, (v) => v.toFixed(1), '#f2a900'],
-    ['pin', 'Delivery share', del ? (del.orders / k.orders) * 100 : 0, (v) => `${v.toFixed(1)}%`, '#f2542d'],
+    ['bag', 'Orders', k.orders, num, 'var(--s2)'],
+    ['tag', 'Average value', k.aov, money, 'var(--s4)'],
+    ['box', 'Items per order', k.itemsPerOrder, (v) => v.toFixed(1), 'var(--s3)'],
+    ['pin', 'Delivery share', del ? (del.orders / k.orders) * 100 : 0, (v) => `${v.toFixed(1)}%`, 'var(--s1)'],
   ];
   return (
     <section className="strip" aria-label="Order summary">
@@ -146,7 +147,7 @@ function OrderDrawer({ billNo, onClose }) {
         {order && (
           <div className="receipt">
             <div className="receipt-top">
-              <span className="logo sm" aria-hidden>🍔</span>
+              <LogoMark size={36} />
               <div><b>{order.brand}</b><span>{order.outlet}</span></div>
               <TypePill type={order.orderType} />
             </div>

@@ -59,10 +59,10 @@ function Card({ c, previous, i }) {
 export default function Kpis({ data }) {
   const { kpis: k, trend, previous } = data;
   const cards = [
-    { label: 'Total revenue', icon: 'dollar', color: '#f2542d', value: k.revenue, fmt: moneyCompact, full: money(k.revenue), prev: previous?.revenue, series: trend.map((t) => t.revenue), sub: money(k.revenue) },
-    { label: 'Orders', icon: 'bag', color: '#2e86ab', value: k.orders, fmt: num, prev: previous?.orders, series: trend.map((t) => t.orders), sub: `${num(k.records)} line items` },
-    { label: 'Avg order value', icon: 'tag', color: '#76b041', value: k.aov, fmt: money, prev: previous?.aov, series: trend.map((t) => (t.orders ? t.revenue / t.orders : 0)), sub: 'revenue ÷ orders' },
-    { label: 'Units sold', icon: 'box', color: '#f2a900', value: k.units, fmt: num, prev: previous?.units, series: trend.map((t) => t.units), sub: `${k.itemsPerOrder.toFixed(1)} items per order` },
+    { label: 'Total revenue', icon: 'dollar', color: 'var(--s1)', value: k.revenue, fmt: moneyCompact, full: money(k.revenue), prev: previous?.revenue, series: trend.map((t) => t.revenue), sub: money(k.revenue) },
+    { label: 'Orders', icon: 'bag', color: 'var(--s2)', value: k.orders, fmt: num, prev: previous?.orders, series: trend.map((t) => t.orders), sub: `${num(k.records)} line items` },
+    { label: 'Avg order value', icon: 'tag', color: 'var(--s4)', value: k.aov, fmt: money, prev: previous?.aov, series: trend.map((t) => (t.orders ? t.revenue / t.orders : 0)), sub: 'revenue ÷ orders' },
+    { label: 'Units sold', icon: 'box', color: 'var(--s3)', value: k.units, fmt: num, prev: previous?.units, series: trend.map((t) => t.units), sub: `${k.itemsPerOrder.toFixed(1)} items per order` },
   ];
   return (
     <section className="kpis" aria-label="Key metrics">

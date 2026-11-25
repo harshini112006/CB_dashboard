@@ -349,6 +349,43 @@ tbody tr { animation: rowIn 0.42s var(--ease) backwards; animation-delay: calc(v
 .login { position: relative; z-index: 1; animation: fadeUp 0.75s var(--ease) backwards; }
 .login .logo { animation: bob 3.2s ease-in-out infinite; }
 
+/* ============ Chart palette (validated) ============ */
+/* Categorical slots in fixed order: ember, teal, gold, indigo, rose, sky, green, violet.
+   Checked with the dataviz validator: adjacent CVD ΔE ≥ 10.2 (light) / 11.8 (dark), normal-vision ≥ 22.3 / 18.4,
+   first three slots pass all-pairs in both modes. Dark steps are re-stepped for the dark surface, not inverted.
+   Light gold is < 3:1 on white, so every chart using it ships a legend / direct labels. */
+:root {
+  --s1: #e8572f; --s2: #00918a; --s3: #d9a300; --s4: #5a5bd6;
+  --s5: #db5d8f; --s6: #2f86d1; --s7: #3f9a4a; --s8: #9b59b6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --s1: #cf4127; --s2: #15a094; --s3: #b48f00; --s4: #7476e4;
+    --s5: #de6390; --s6: #3a91dc; --s7: #43aa54; --s8: #a56fcf;
+  }
+}
+:root[data-theme='dark'] {
+  --s1: #cf4127; --s2: #15a094; --s3: #b48f00; --s4: #7476e4;
+  --s5: #de6390; --s6: #3a91dc; --s7: #43aa54; --s8: #a56fcf;
+}
+
+.tpill { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; background: color-mix(in srgb, var(--c, var(--muted)) 12%, transparent); padding: 2px 10px 2px 8px; }
+.tpill i { width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--muted)); }
+
+/* ============ Brand mark & wordmark ============ */
+.logo { background: none; border-radius: 13px; display: inline-grid; place-items: center; flex-shrink: 0; box-shadow: 0 8px 22px rgba(242, 84, 45, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.logo svg { display: block; width: 100%; height: 100%; }
+.brand .logo { transition: transform 0.35s var(--ease, ease); }
+.brand:hover .logo { transform: rotate(-6deg) scale(1.05); }
+.wordmark { line-height: 1.15; }
+.wordmark strong { display: block; font-size: 17px; font-weight: 750; letter-spacing: -0.025em; color: #fff; }
+.wordmark em { font-style: normal; font-weight: 500; margin-left: 4px; background: linear-gradient(90deg, #ffc2a3, #ff7a54); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.wordmark small { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: var(--side-text); margin-top: 4px; }
+.wordmark small::before { content: ''; width: 14px; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, #f2542d, transparent); }
+.mobile-top .wordmark strong { color: var(--text); font-size: 16px; }
+.mobile-top .wordmark em { background-image: linear-gradient(90deg, var(--accent), #f2a24e); }
+.mobile-top .wordmark small { color: var(--muted); }
+
 /* ============ Round 3: product-grade UI ============ */
 kbd { font: 600 11px/1.6 var(--font); background: var(--field); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 6px; padding: 0 6px; color: var(--muted); }
 @keyframes podIn { from { opacity: 0; transform: translateY(26px) scale(0.96); } }

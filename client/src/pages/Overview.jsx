@@ -25,11 +25,11 @@ export default function Overview({ session }) {
           <Reveal delay={120}><TrendChart data={data} granularity={granularity} onGranularity={setGranularity} /></Reveal>
           <Reveal><section className="grid g3">
             <BarBreakdown title="Revenue by outlet" rows={data.outlets} selected={filters.outlets} onPick={(v) => toggle('outlets', v)} />
-            <DonutBreakdown title="Order type" rows={data.orderTypes} selected={filters.orderTypes} onPick={(v) => toggle('orderTypes', v)} />
-            <DonutBreakdown title="Payment / channel" rows={data.settlements} selected={filters.settlements} onPick={(v) => toggle('settlements', v)} />
+            <DonutBreakdown title="Order type" rows={data.orderTypes} domain={meta?.orderTypes} selected={filters.orderTypes} onPick={(v) => toggle('orderTypes', v)} />
+            <DonutBreakdown title="Payment / channel" rows={data.settlements} domain={meta?.settlements} selected={filters.settlements} onPick={(v) => toggle('settlements', v)} />
           </section></Reveal>
           <Reveal><section className="grid g2">
-            <BarBreakdown title="Revenue by category" rows={data.groups} selected={filters.groups} onPick={(v) => toggle('groups', v)} color="#2e86ab" />
+            <BarBreakdown title="Revenue by category" rows={data.groups} selected={filters.groups} onPick={(v) => toggle('groups', v)} />
             <TopItems byRevenue={data.topItemsByRevenue} byUnits={data.topItemsByUnits} />
           </section></Reveal>
           <Reveal><section className="grid g2">
