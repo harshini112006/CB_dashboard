@@ -4,7 +4,7 @@ A web analytics dashboard built from a ~300,000-row Excel export of restaurant l
 
 | | |
 |---|---|
-| **Live app** | `<DEPLOYED_URL>` ← _replace after deploying (see [Deployment](#deployment))_ |
+| **Live app** | https://cb-dashboard-1.onrender.com _(hosted on Render's free tier – it sleeps when idle, so the first visit can take up to a minute to wake; no login needed)_ |
 | **Repository** | https://github.com/harshini112006/CB_dashboard |
 | **Stack** | React 18 + Vite · Recharts · Node.js/Express · MongoDB (native driver) |
 
@@ -136,7 +136,7 @@ Any container host also works via the `Dockerfile` / `docker compose`. Vercel's 
 4. Paste the resulting URL into the table at the top of this README.
 5. _(Optional CD)_ Add the Render **Deploy Hook** URL as the GitHub repository secret `RENDER_DEPLOY_HOOK`; the workflow in `.github/workflows/ci.yml` then redeploys after every green push to `main`.
 
-> **Demo credentials:** `<fill in after deploying>` — username `reviewer`, password = the `AUTH_PASSWORD` you set.
+> The deployed instance runs **without login** (no `AUTH_PASSWORD` set). Set `AUTH_USER` / `AUTH_PASSWORD` to enable the optional login screen.
 
 _(Any Node host works the same way: build command `npm --prefix server install && npm run build`, start command `npm start`, env var `MONGODB_URI`.)_
 
